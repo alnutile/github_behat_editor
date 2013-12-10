@@ -1,0 +1,17 @@
+{
+    "name": "alnutile/behat_editor",
+    "description": "Using the github API with BehatEditor. Drupal will pull in the libraries via the GithubAPI Module",
+    "license": "GPL2.0+",
+    "type": "library",
+    "authors": [
+        {
+      "name": "Alfred Nutile",
+      "email": "alfrednutile@gmail.com"
+        }
+    ],
+    "autoload": {
+        "psr-0": {
+            "Drupal\\GithubBehatEditor": "src/"
+        }
+    }
+}

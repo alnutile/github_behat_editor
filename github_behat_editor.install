@@ -1,0 +1,133 @@
+<?php
+
+/**
+ * @file
+ * Install
+ */
+
+
+function github_behat_editor_enable(){
+    $tables = github_behat_editor_schema();
+    foreach($tables as $key => $value) {
+        if(!db_table_exists($key)) {
+            db_create_table($key, $value);
+        }
+    }
+
+    $modules = array('github_behat_editor_services');
+    module_enable($modules);
+}
+
+
+/**
+ *
+ */
+function github_behat_editor_schema() {
+
+    $schema['github_behat_editor_repos'] = array(
+        'description' => 'Repos for Users and Groups',
+        'fields' => array(
+            'sid' => array(
+                'type' => 'serial',
+                'description' => 'Settings ID',
+                'not null' => TRUE,
+            ),
+            'uid' => array(
+                'type' => 'int',
+                'not null' => TRUE,
+                'description' => 'User who made settings',
+            ),
+            'gid' => array(
+                'type' => 'int',
+                'not null' => FALSE,
+                'default' => 0,
+                'description' => 'Group the user made settings for',
+            ),
+            'repo_name' => array(
+                'type' => 'varchar',
+                'length' => '255',
+                'not null' => FALSE,
+                'default' => NULL,
+                'description' => 'Nice Name of the URL',
+            ),
+            'repo_url' => array(
+                'type' => 'varchar',
+                'length' => '255',
+                'not null' => FALSE,
+                'default' => NULL,
+                'description' => 'Full URL',
+            ),
+            'branch' => array(
+                'type' => 'varchar',
+                'length' => '255',
+                'not null' => FALSE,
+                'default' => NULL,
+                'description' => 'Branch if needed',
+            ),
+            'active' => array(
+                'type' => 'int',
+                'not null' => FALSE,
+                'default' => 1,
+                'description' => 'Is Active',
+            ),
+        ),
+        'primary key' => array('sid'),
+    );
+
+    $schema['github_behat_editor_commit_status'] = array(
+        'description' => 'Commit Status incase GitHub is down. Storing extra info incase Repo is deleted from github_behat_editor_repos before commit',
+        'fields' => array(
+            'id' => array(
+                'type' => 'serial',
+                'description' => 'Unique ID',
+                'not null' => TRUE,
+            ),
+            'uid' => array(
+                'type' => 'int',
+                'not null' => TRUE,
+                'description' => 'User who made settings',
+            ),
+            'repo_url' => array(
+                'type' => 'varchar',
+                'length' => '255',
+                'not null' => FALSE,
+                'default' => NULL,
+                'description' => 'Related github repo url stored here as well',
+            ),
+            'branch' => array(
+                'type' => 'varchar',
+                'length' => '255',
+                'not null' => FALSE,
+                'default' => NULL,
+                'description' => 'Branch',
+            ),
+            'created' => array(
+                'type' => 'int',
+                'not null' => FALSE,
+                'description' => 'Test created at as Unix timestamp.',
+            ),
+            'commit_message' => array(
+                'type' => 'blob',
+                'size' => 'normal',
+                'description' => 'Commit Message',
+                'serialize' => TRUE,
+            ),
+            'repo' => array(
+                'type' => 'varchar',
+                'length' => '255',
+                'not null' => FALSE,
+                'default' => NULL,
+                'description' => 'Can be triggered by a repo as well',
+            ),
+            'commit_status' => array(
+                'type' => 'int',
+                'not null' => TRUE,
+                'default' => 0,
+                'description' => '0 = pending, 1 = commited to github',
+            ),
+        ),
+        'primary key' => array('id'),
+    );
+
+    return $schema;
+}

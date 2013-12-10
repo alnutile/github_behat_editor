@@ -1,0 +1,83 @@
+<?php
+
+/**
+ * @file
+ * Github repo integration to BehatEditor
+ */
+
+function github_behat_editor_permission(){
+        $items['github behat choose repo'] = array(
+            'title' => t('View a test file'),
+            'description' => t('Can view a singular test')
+        );
+        $items['github behat admin settings'] = array(
+            'title' => t('Can Admin Settings'),
+            'description' => t('Can Admin Settings')
+        );
+        return $items;
+}
+
+/**
+ * Implements hook_ctools_plugin_api().
+ */
+function github_behat_editor_ctools_plugin_api() {
+    list($module, $api) = func_get_args();
+    if ($module == "services" && $api == "services") {
+        return array("version" => "3");
+    }
+}
+
+/**
+ * Implements hook_menu().
+ *
+ * @todo use services for the run endpoint
+ */
+function github_behat_editor_menu() {
+    $path = drupal_get_path('module', 'github_behat_editor');
+    $items['admin/behat/github_settings'] =  array(
+        'title' => 'Github Repos',
+        'access arguments' => array('github behat admin settings'),
+        'type' => MENU_LOCAL_TASK | MENU_NORMAL_ITEM,
+        'weight' => 20,
+        'page callback' => 'github_behat_editor_repos_user',
+        'file path' => "$path/includes/",
+        'file' => 'github_behat_editor_repos_user.inc',
+    );
+
+    $items['admin/behat/github_settings/user'] =  array(
+        'title' => 'Github Repos for User',
+        'access arguments' => array('github behat admin settings'),
+        'type' => MENU_DEFAULT_LOCAL_TASK ,
+        'weight' => -5,
+    );
+
+    $items['admin/behat/github_settings/groups'] =  array(
+        'title' => 'Github Repos for Group',
+        'access arguments' => array('github behat admin settings'),
+        'type' => MENU_LOCAL_TASK,
+        'weight' => 10,
+        'page callback' => 'github_behat_editor_repos_group',
+        'file path' => "$path/includes/",
+        'file' => 'github_behat_editor_repos_group.inc',
+    );
+
+    $items['admin/behat/github_settings/repos/%/%'] =  array(
+        'title' => 'Add User Level Behat Settings',
+        'access arguments' => array('behat admin settings'),
+        'type' => MENU_CALLBACK,
+        'weight' => 10,
+        'page callback' => 'github_behat_editor_repos_manage',
+        'page arguments' => array(4,5),
+        'file path' => "$path/includes/",
+        'file' => 'github_behat_editor_repos_manage.inc',
+    );
+
+    return $items;
+}
+
+/**
+ * Will be needed if github is down and commit is needed
+ */
+function github_behat_editor_cron() {
+
+}

@@ -1,0 +1,16 @@
+name = Github integration into Behat Editor
+description = Pull in tests from Github
+package = Behat
+core = 7.x
+
+dependencies[] = composer_manager
+dependencies[] = behat_editor
+dependencies[] = github_api
+dependencies[] = services
+dependencies[] = ctools
+
+files[] = github_behat_editor.services.inc
+
+features[ctools][] = services:services:3
+features[features_api][] = api:2
+features[services_endpoint][] = github_behat_editor_services
