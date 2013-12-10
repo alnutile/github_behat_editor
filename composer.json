@@ -9,6 +9,8 @@
       "email": "alfrednutile@gmail.com"
         }
     ],
+    "require": {
+    },
     "autoload": {
         "psr-0": {
             "Drupal\\GithubBehatEditor": "src/"

@@ -40,7 +40,7 @@ function github_behat_editor_menu() {
         'type' => MENU_LOCAL_TASK | MENU_NORMAL_ITEM,
         'weight' => 20,
         'page callback' => 'github_behat_editor_repos_user',
-        'file path' => "$path/includes/",
+        'file path' => "$path/includes",
         'file' => 'github_behat_editor_repos_user.inc',
     );
 
@@ -61,13 +61,13 @@ function github_behat_editor_menu() {
         'file' => 'github_behat_editor_repos_group.inc',
     );
 
-    $items['admin/behat/github_settings/repos/%/%'] =  array(
+    $items['admin/behat/github_settings/repos/%/%/%'] =  array(
         'title' => 'Add User Level Behat Settings',
         'access arguments' => array('behat admin settings'),
         'type' => MENU_CALLBACK,
         'weight' => 10,
         'page callback' => 'github_behat_editor_repos_manage',
-        'page arguments' => array(4,5),
+        'page arguments' => array(4,5,6),
         'file path' => "$path/includes/",
         'file' => 'github_behat_editor_repos_manage.inc',
     );

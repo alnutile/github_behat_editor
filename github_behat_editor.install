@@ -27,9 +27,14 @@ function github_behat_editor_schema() {
     $schema['github_behat_editor_repos'] = array(
         'description' => 'Repos for Users and Groups',
         'fields' => array(
-            'sid' => array(
+            'id' => array(
                 'type' => 'serial',
-                'description' => 'Settings ID',
+                'description' => 'ID',
+                'not null' => TRUE,
+            ),
+            'github_id' => array(
+                'type' => 'int',
+                'description' => 'Github Unique ID',
                 'not null' => TRUE,
             ),
             'uid' => array(
@@ -71,7 +76,7 @@ function github_behat_editor_schema() {
                 'description' => 'Is Active',
             ),
         ),
-        'primary key' => array('sid'),
+        'primary key' => array('id'),
     );
 
     $schema['github_behat_editor_commit_status'] = array(
@@ -130,4 +135,19 @@ function github_behat_editor_schema() {
     );
 
     return $schema;
+}
+
+
+/**
+ * Add Github ID
+ */
+function github_behat_editor_update_7001() {
+    $fields = array('github_id');
+    $schema = github_behat_editor_schema();
+    $table = $schema['github_behat_editor_repos'];
+    foreach($fields as $field) {
+        if (!db_field_exists('github_behat_editor_repos', $field)) {
+            db_add_field('github_behat_editor_repos', $field, $table['fields'][$field]);
+        }
+    }
 }
