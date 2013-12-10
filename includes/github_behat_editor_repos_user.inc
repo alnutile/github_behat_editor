@@ -22,20 +22,18 @@ function github_behat_editor_user_repo_settings_user($form, &$form_state) {
     $repos = new Drupal\GithubBehatEditor\RepoManager() ;
 
     $userRepos = $repos->getUserRepos($user->uid);
-    dpm($userRepos);
 
     $header = array(
-        'sid' => array('data' => t('ID')),
+        'id' => array('data' => t('ID')),
         'repo_name' => array('data' => t('Repo Name')),
         'repo_url' => array('data' => t('URL')),
         'active' => array('data' => t('Active')),
-        'edit' => array('data' => t('Edit')),
     );
-
+    $rows = _github_editor_build_table_rows($userRepos['results']);
     $build['dashboard'] = array(
         '#type' => 'tableselect',
         '#header' => $header,
-        '#options' => $userRepos['results'],
+        '#options' => $rows,
         '#empty' => t('No Repos yet click "Add New Row" below'),
     );
 
@@ -55,8 +53,8 @@ function github_behat_editor_user_repo_settings_user($form, &$form_state) {
     $build['operations']['submit'] = array(
         '#type' => 'submit',
         '#value' => t('Submit Settings'),
-        '#validate' => array('behat_editor_base_url_settings_user_validate'),
-        '#submit' => array('behat_editor_base_url_settings_user_submit'),
+        '#validate' => array('github_behat_editor_user_repo_settings_user_validate'),
+        '#submit' => array('github_behat_editor_user_repo_settings_user_submit'),
     );
 
 
@@ -67,9 +65,39 @@ function github_behat_editor_user_repo_settings_user($form, &$form_state) {
         '#attributes' => array('class' => array('btn btn-md btn-success'))
     );
 
-
-
     return $build;
 
 
+}
+
+/**
+ * Build out the results so they work in the table format
+ * with the correct ID being passed
+ */
+function _github_editor_build_table_rows($rows) {
+    $output = array();
+    foreach($rows as $key => $value) {
+        $output[$value['id']]['id'] = $value['id'];
+        $output[$value['id']]['repo_name'] = $value['repo_name'];
+        $output[$value['id']]['repo_url'] = $value['repo_url'];
+        $output[$value['id']]['active'] = $value['active'];
+    }
+    return $output;
+}
+
+function github_behat_editor_user_repo_settings_user_validate($form, &$form_state) {
+    // Error if there are no items to select.
+    if (!is_array($form_state['values']['dashboard']) || !count(array_filter($form_state['values']['dashboard']))) {
+        form_set_error('', t('No items selected.'));
+    }
+}
+
+function github_behat_editor_user_repo_settings_user_submit($form, &$form_state) {
+    composer_manager_register_autoloader();
+    $operation = $form_state['values']['operation'];
+    $ids = array_filter($form_state['values']['dashboard']);
+    if($operation == 'delete') {
+        Drupal\GithubBehatEditor\RepoManager::removeRepo($ids);
+        drupal_set_message("Your @count repos where removed from your account", array('@count' => count($ids)));
+    }
 }

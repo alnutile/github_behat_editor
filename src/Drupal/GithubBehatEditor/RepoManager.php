@@ -66,4 +66,9 @@ class RepoManager {
         }
         return array('results' => 0, 'error' => 0);
     }
+
+    public static function removeRepo(array $ids) {
+        //@todo ACL?
+        GithubRepoQueries::deleteRepo($ids);
+    }
 } 

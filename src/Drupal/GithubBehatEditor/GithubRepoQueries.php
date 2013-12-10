@@ -38,6 +38,12 @@ class GithubRepoQueries {
         return $insert;
     }
 
+    static public function deleteRepo(array $ids) {
+        db_delete('github_behat_editor_repos')
+            ->condition('id', $ids, 'IN')
+            ->execute();
+    }
+
     static public function fields() {
         global $user;
         return (object) array(

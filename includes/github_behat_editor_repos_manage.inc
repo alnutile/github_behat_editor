@@ -127,6 +127,5 @@ function github_behat_editor_repos_form_submit($form, &$form_state) {
     $repos = $form_state['values']['repo_name'];
     $insert = new Drupal\GithubBehatEditor\RepoManager();
     $results = $insert->insertRepo(array('repos' => $repos));
-    dpm($results);
 }
 
