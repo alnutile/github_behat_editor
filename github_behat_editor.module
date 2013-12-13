@@ -62,7 +62,7 @@ function github_behat_editor_menu() {
     );
 
     $items['admin/behat/github_settings/repos/%/%/%'] =  array(
-        'title' => 'Add User Level Behat Settings',
+        'title' => 'Add Github Repo for your user account',
         'access arguments' => array('behat admin settings'),
         'type' => MENU_CALLBACK,
         'weight' => 10,

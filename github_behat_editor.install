@@ -6,7 +6,8 @@
  */
 
 
-function github_behat_editor_enable(){
+function github_behat_editor_install(){
+
     $tables = github_behat_editor_schema();
     foreach($tables as $key => $value) {
         if(!db_table_exists($key)) {
@@ -16,6 +17,13 @@ function github_behat_editor_enable(){
 
     $modules = array('github_behat_editor_services');
     module_enable($modules);
+
+    $path = file_build_uri("/behat_github/");
+    if (!file_prepare_directory($path, FILE_CREATE_DIRECTORY | FILE_MODIFY_PERMISSIONS)) {
+        drupal_set_message(t('Folder could not be made at @folder', array('@folder' => $path)), 'error');
+    } else {
+        drupal_chmod($path, $mode = 0777); // in case drush makes it I want www-data to write to this
+    }
 }
 
 
@@ -68,6 +76,13 @@ function github_behat_editor_schema() {
                 'not null' => FALSE,
                 'default' => NULL,
                 'description' => 'Branch if needed',
+            ),
+            'folder' => array(
+                'type' => 'varchar',
+                'length' => '255',
+                'not null' => FALSE,
+                'default' => NULL,
+                'description' => 'Root folder just use / if it is that',
             ),
             'active' => array(
                 'type' => 'int',
@@ -143,6 +158,20 @@ function github_behat_editor_schema() {
  */
 function github_behat_editor_update_7001() {
     $fields = array('github_id');
+    $schema = github_behat_editor_schema();
+    $table = $schema['github_behat_editor_repos'];
+    foreach($fields as $field) {
+        if (!db_field_exists('github_behat_editor_repos', $field)) {
+            db_add_field('github_behat_editor_repos', $field, $table['fields'][$field]);
+        }
+    }
+}
+
+/**
+ * Setup root folder for GithubBehatEditor
+ */
+function github_behat_editor_update_7002() {
+    $fields = array('folder');
     $schema = github_behat_editor_schema();
     $table = $schema['github_behat_editor_repos'];
     foreach($fields as $field) {

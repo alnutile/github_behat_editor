@@ -2,6 +2,9 @@
 
 use Drupal\GithubBehatEditor;
 
+use TQ\Git\StreamWrapper\StreamWrapper,
+    TQ\Git\Cli\Binary;
+
 /**
  * @file manage the settings for the repo to user/group
  */
@@ -22,10 +25,13 @@ function github_behat_editor_repos_manage($type, $action, $id) {
 }
 
 function github_behat_editor_repos_form($form, &$form_state) {
-    composer_manager_register_autoloader();
-    $client = github_api_client();
+    global $user;
+    $path = drupal_get_path('module', 'github_behat_editor');
 
-    $repos_found = $client->api('current_user')->repositories();
+    composer_manager_register_autoloader();
+
+    $client = new Drupal\GithubBehatEditor\RepoManager();
+    $repos_found = $client->getAllRepos();
 
     drupal_set_message(t('Return to !link', array('!link' => l('admin interface', 'admin/behat/github_settings/'))));
 
@@ -35,12 +41,18 @@ function github_behat_editor_repos_form($form, &$form_state) {
     $id = '';
     $base_url = '';
     $repo_name = '';
+    $folder = '';
     $active = 1;
     $repo_url = 0;
     $gid = '';
     $branch = '';
 
     $button = strtoupper($action);
+
+    $form['type'] = array(
+        '#type' => 'hidden',
+        '#default_value' => $type,
+    );
 
     $form['rid'] = array(
         '#type' => 'hidden',
@@ -57,11 +69,20 @@ function github_behat_editor_repos_form($form, &$form_state) {
         '#default_value' => $uid,
     );
 
-    $existing_repos_formatted = _github_behat_editor_formatted_list_of_existing_repos_in_db($uid);
+    $existing_repos_formatted = array();
+    if($type == 'group') {
+        $existing_repos = $client->getGroupRepos($user->uid);
+    } else {
+        $existing_repos = $client->getUserRepos($user->uid);
+    }
+
+    foreach($existing_repos['results'] as $key => $value) {
+        $existing_repos_formatted[] = $value['repo_name'];
+    }
     $options = array();
     foreach($repos_found as $key => $value) {
         if(!in_array($value['name'], $existing_repos_formatted)) {
-            $options["{$value['id']}|{$value['html_url']}|{$value['name']}|{$uid}"] = $value['name'];
+            $options["{$value['id']}|{$value['html_url']}|{$value['name']}|{$uid}|{$value['full_name']}"] = $value['name'];
         }
     };
 
@@ -74,10 +95,36 @@ function github_behat_editor_repos_form($form, &$form_state) {
         '#multiple' => TRUE,
     );
 
-    $title = t('These repos are not seen above since they are already selected in the database for your id');
+    if($type == 'group') {
+        $gid = '';
+        $options = array(); //get group ui via url group
+        $groups = new Drupal\BehatEditor\BehatPermissions($user->uid);
+        $form_helper = new Drupal\BehatEditor\BehatSettingsFormHelper();
+        $groups = $form_helper->_behat_editor_group_gid_and_title_options_list($groups->getGroupIDs());
+
+        $form['group_name'] = array(
+            '#type' => 'select',
+            '#default_value' => $gid,
+            '#description' => t('Choose which group to relate to'),
+            '#options' => $groups,
+            '#empty_value' => "-select one-",
+            '#multiple' => FALSE,
+            '#required' => TRUE
+        );
+    }
+
+    $title = t('These repos are not seen above since they are already selected in the database for your uid or group id');
     $variables = array('items' => $existing_repos_formatted, 'title' => $title);
     $form['already_repos'] = array(
         '#markup' => theme('item_list', $variables),
+    );
+
+    $form['folder'] = array(
+        '#title' => t('Folder tests are in'),
+        '#type' => 'textfield',
+        '#default_value' => $folder,
+        '#required' => TRUE,
+        '#description' => t('It is required to store tests in a repo\'s folder. This will be the folder that this system looks for files.'),
     );
 
     $form['repo_url'] = array(
@@ -99,16 +146,6 @@ function github_behat_editor_repos_form($form, &$form_state) {
     return $form;
 }
 
-function _github_behat_editor_formatted_list_of_existing_repos_in_db($uid){
-    $existing_user_repos_in_db = new GithubBehatEditor\GithubRepoQueries();
-    $repos_already = $existing_user_repos_in_db->selectAllByUid($uid);
-    $results = array();
-    foreach($repos_already['results'] as $key => $value) {
-        $results[] = $value['repo_name'];
-    }
-    return $results;
-}
-
 /**
  * @param $form
  * @param $form_state
@@ -120,12 +157,26 @@ function github_behat_editor_repos_form_validate($form, &$form_state) {
     if(empty($form_state['values']['repo_name'])) {
         form_set_error('repo_name', t('Um seems you did not choose a repo?'));
     }
+    if($form_state['values']['group_name'] == '-select one-') {
+        form_set_error('group_name', t('Um seems you did not choose a group?'));
+    }
 }
 
 function github_behat_editor_repos_form_submit($form, &$form_state) {
     composer_manager_register_autoloader();
+    global $user;
     $repos = $form_state['values']['repo_name'];
+    $folder = $form_state['values']['folder'];
     $insert = new Drupal\GithubBehatEditor\RepoManager();
-    $results = $insert->insertRepo(array('repos' => $repos));
+    if($form_state['values']['type'] == 'user') {
+        $results = $insert->insertRepo(array('repos' => $repos, 'folder' => $folder));
+    }
+    if($form_state['values']['type'] == 'group') {
+        $gid = $form_state['values']['group_name'];
+        $results = $insert->insertRepo(array('repos' => $repos, 'folder' => $folder, 'gid' => $gid));
+        $insert->cloneRepoGroup($insert->repos_chosen, array('uid' => $user->uid, 'gid' => $gid));
+    }
+    //Clone one repo for the group and one for the user
+    $insert->cloneRepo($insert->repos_chosen, array('uid' => $user->uid));
 }
 

@@ -10,7 +10,14 @@
         }
     ],
     "require": {
+        "teqneers/PHP-Stream-Wrapper-for-Git": "*"
     },
+    "repositories": [
+        {
+            "type": "git",
+            "url": "https://github.com/teqneers/PHP-Stream-Wrapper-for-Git"
+        }
+    ],
     "autoload": {
         "psr-0": {
             "Drupal\\GithubBehatEditor": "src/"
