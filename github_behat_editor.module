@@ -1,5 +1,6 @@
 <?php
-
+use Drupal\GithubBehatEditor,
+    Drupal\BehatEditor;
 /**
  * @file
  * Github repo integration to BehatEditor
@@ -80,4 +81,19 @@ function github_behat_editor_menu() {
  */
 function github_behat_editor_cron() {
 
+}
+
+function github_behat_editor_behat_editor_files_found_alter(&$data, $context1 = array(), $context2 = array()) {
+    composer_manager_register_autoloader();
+    dpm($data);
+    global $user;
+    $files = new GithubBehatEditor\GithubDownloadedFiles();
+    $group_files = $files->getGroupFilesArray();
+    $data = array_merge($data, $group_files);
+    //Append Array of files
+    //key => behat_github
+    //first get group files for this user
+    //  for each users groups parse the folders subfolder (from the db)
+    //  the create a file object as needed.
+    //then get user files to append collection or overwrite as needed
 }
