@@ -85,15 +85,76 @@ function github_behat_editor_cron() {
 
 function github_behat_editor_behat_editor_files_found_alter(&$data, $context1 = array(), $context2 = array()) {
     composer_manager_register_autoloader();
-    dpm($data);
     global $user;
     $files = new GithubBehatEditor\GithubDownloadedFiles();
     $group_files = $files->getGroupFilesArray();
     $data = array_merge($data, $group_files);
+    dpm($data);
+
     //Append Array of files
     //key => behat_github
     //first get group files for this user
     //  for each users groups parse the folders subfolder (from the db)
     //  the create a file object as needed.
     //then get user files to append collection or overwrite as needed
+}
+
+function github_behat_editor_behat_editor_build_path_alter(&$data, $context1 ) {
+    global $user;
+    watchdog('test_alter', print_r($data, 1));
+    if(arg(3) == 'behat_github') {
+        $repo_name = arg(5);
+        $gid = arg(4);
+        $subfolder = arg(6);
+        $filename = arg(7);
+        $module = arg(3);
+        $action = arg(2);
+        $uid = $user->uid;
+
+        if($gid == 0) {
+            //This is a user based repo so just need to verify access
+        } else {
+            //This is a group id so we need to
+            //  1. query to see if the user is in the group
+            //  2. see if the user already cloned the repo
+            $perms = new BehatEditor\BehatPermissions($uid);
+            $users_groups = $perms->getGroupIDs();
+            if(!in_array($gid, $users_groups)){
+                //@todo better exit plan here
+                $message = t('You are not in this group');
+                throw new \RuntimeException($message);
+            }
+            //See now if they already have this folder
+            $repo_manager = new GithubBehatEditor\RepoManager();
+            //Lets grab the full db info for this repo
+            $repos = $repo_manager->getGroupRepo(array('gid' => $gid, 'repo_name' => $repo_name));
+            if(empty($repos['results']) || $repos['error'] == 1){
+                //@todo better exit plan here
+                $message = t('The !repo repo could not be found for the group', array('!repo' => $repo_name));
+                throw new \RuntimeException($message);
+            }
+            $repo_data = $repos['results'][0];
+            watchdog('test_repo_data2', print_r($repo_data, 1));
+            $repo_url = $repo_data['repo_url'];
+            $repo_acount = $repo_data['repo_account'];
+            $full_name = $repo_acount .'/'. $repo_name; //just easier formatting for this clone command
+            $clone = $repo_manager->cloneRepo(array($full_name), array('uid' => $user->uid, ''));  //This will check if it is there already and get it if not
+
+            //Make a file object for the system for the behat_editor_build_path
+            $github_download_file = new GithubBehatEditor\GithubDownloadedFile();
+            $params = array(
+                'repo_name' => $repo_name,
+                'gid' => $gid,
+                'id' => $uid,
+                'uid' => $uid,
+                'subpath' => $subfolder,
+                'type' => 'users',
+                'filename' => $filename,
+            );
+            $build_paths = $github_download_file->build_paths($params);
+            $file_info = $github_download_file->get_file_info();
+            $data = $file_info;
+            watchdog("test_data_going_out", print_r($data, 1));
+        }
+    }
 }

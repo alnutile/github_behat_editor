@@ -58,6 +58,15 @@ class RepoManager {
         return array('results' => $records, 'error' => $results['error']);
     }
 
+    public function getGroupRepo($params){
+        $this->gid = $params['gid'];
+        $this->repo_name = $params['repo_name'];
+        $queryRepos = new GithubRepoQueries();
+        $results = $queryRepos->selectAllByGidAndRepoName($this->gid, $this->repo_name);
+        $records = $results['results'];
+        return array('results' => $records, 'error' => $results['error']);
+    }
+
     public function setUserRepos(){
 
     }
@@ -104,9 +113,11 @@ class RepoManager {
             if(isset($params['gid'])) {
                 $fields->gid = $params['gid'];
             }
+            $repo_account = implode('/', $split_value[4]); //grab the account from the full name
             $fields->github_id = $split_value[0];
             $fields->repo_url = $split_value[1];
             $fields->repo_name = $split_value[2];
+            $fields->repo_account = $repo_account;
             $fields->uid = $split_value[3];
             $fields->folder = $params['folder'];
             $results = $query->insertRepo((array) $fields);
@@ -183,19 +194,26 @@ class RepoManager {
             $this->gid = 0;
             if( self::_conditions() ) {
                 drupal_set_message(t('Folder @folder already exists so no new clone', array('@folder' => $this->repo_name)), 'info');
-                return array('error' => 1, 'response' => 'Folder already exists so will not clone again');
+                watchdog('github_behat_editor_clone_repo', t('Folder @folder already exists so no new clone', array('@folder' => $this->repo_name)), 'info');
+                return array('error' => 0, 'response' => 'Folder already exists so will not clone again');
             }
 
             $git = new GitActions();
             if($git->checkIfGitFolder($this->public_absolute_path)) {
                 $clone = $git->gitClone(array('destination' => $this->public_absolute_path, 'full_repo_path' => $full_repo_path, 'use_current_path' => TRUE));
                 if($clone['error'] == 0) {
-                    drupal_set_message(t("There is not a git folder @folder so a new clone was made.", array('@folder' => $this->public_absolute_path)));
+                    $message = t("There is not a git folder @folder so a new clone was made.", array('@folder' => $this->public_absolute_path));
+                    drupal_set_message($message);
+                    watchdog('github_behat_editor', $message, $variables = array(), $severity = WATCHDOG_NOTICE, $link = FALSE);
                 } else {
-                    drupal_set_message(t("There was a problem during the clone here is the @output", array('@output' => implode($clone['response']))));
+                    $message = t("There was a problem during the clone here is the @output", array('@output' => implode($clone['response'])));
+                    drupal_set_message($message);
+                    watchdog('github_behat_editor', $message, $variables = array(), $severity = WATCHDOG_NOTICE, $link = FALSE);
                 }
             } else {
-                drupal_set_message(t("There @folder is a git folder already so we will just leave it alone for now.", array('@folder' => $this->public_absolute_path)));
+                $message = t("There @folder is a git folder already so we will just leave it alone for now.", array('@folder' => $this->public_absolute_path));
+                drupal_set_message($message);
+                watchdog('github_behat_editor', $message, $variables = array(), $severity = WATCHDOG_NOTICE, $link = FALSE);
             }
         }
     }

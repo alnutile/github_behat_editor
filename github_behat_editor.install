@@ -63,6 +63,13 @@ function github_behat_editor_schema() {
                 'default' => NULL,
                 'description' => 'Nice Name of the URL',
             ),
+            'repo_account' => array(
+                'type' => 'varchar',
+                'length' => '255',
+                'not null' => FALSE,
+                'default' => NULL,
+                'description' => 'Repo Account',
+            ),
             'repo_url' => array(
                 'type' => 'varchar',
                 'length' => '255',
@@ -172,6 +179,21 @@ function github_behat_editor_update_7001() {
  */
 function github_behat_editor_update_7002() {
     $fields = array('folder');
+    $schema = github_behat_editor_schema();
+    $table = $schema['github_behat_editor_repos'];
+    foreach($fields as $field) {
+        if (!db_field_exists('github_behat_editor_repos', $field)) {
+            db_add_field('github_behat_editor_repos', $field, $table['fields'][$field]);
+        }
+    }
+}
+
+
+/**
+ * Setup new field repo_account
+ */
+function github_behat_editor_update_7003() {
+    $fields = array('repo_account');
     $schema = github_behat_editor_schema();
     $table = $schema['github_behat_editor_repos'];
     foreach($fields as $field) {

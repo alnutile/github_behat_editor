@@ -17,6 +17,7 @@ class GithubDownloadedFiles extends BehatEditor\Files {
     public $modules = array();
     public $cache = TRUE;
     public $uid;
+    public $gid;
     public $repos;
     public $group_repos = array();
     public $user_repos = array();
@@ -28,6 +29,7 @@ class GithubDownloadedFiles extends BehatEditor\Files {
     public function __construct(array $modules = array(), $subpath = FALSE, $cache = TRUE) {
         global $user;
         $this->uid = $user->uid;
+        $this->gid = 0;
         $this->subpath = FALSE;
         $this->cache = $cache;
         $this->modules = array();
@@ -138,13 +140,16 @@ class GithubDownloadedFiles extends BehatEditor\Files {
     protected function _buildArrayOfAvailableFiles($type = "user") {
         $files_found = array();
         foreach($this->repos as $key => $values) {
-            $test_folder = $values['folder'];
+            $this->subpath = $values['folder'];
             $this->repo_name = $values['repo_name'];
             if($type == 'group') {
                 $gid = $values['gid'];
-                $this->relative_path = file_build_uri("/$this->machine_name/groups/$gid/$this->repo_name/$test_folder");
+                $this->gid = $gid;
+                $this->relative_path = file_build_uri("/$this->machine_name/groups/$gid/$this->repo_name/$this->subpath");
                 $this->absolute_path = drupal_realpath($this->relative_path);
                 $files_found[$this->machine_name] = self::_behatEditorScanDirectories();
+            } else {
+
             }
 
 //            if ($machine_name == BEHAT_EDITOR_DEFAULT_STORAGE_FOLDER) {
@@ -165,10 +170,11 @@ class GithubDownloadedFiles extends BehatEditor\Files {
         $files = file_scan_directory($this->absolute_path, '/.*\.feature/', $options = array('recurse' => TRUE), $depth = 0);
         dpm($files);
         foreach($files as $key => $value) {
-            $subpath = $this->subpath;
+
             $array_key = $key;
             $found_uri = array_slice(explode('/', $files[$key]->uri), 0, -1); //remove file name
             $base_uri = explode('/', $this->absolute_path);
+            dpm($this);
             if(count($found_uri) > count($base_uri)) {
                 $subpath = array_slice($found_uri, count($base_uri), 1);
                 $subpath = $subpath[0];
@@ -185,10 +191,12 @@ class GithubDownloadedFiles extends BehatEditor\Files {
                 'module' => $this->module,
                 'absolute_path' => $this->absolute_path,
                 'repo_name' => $this->repo_name,
-                'filename' => $filename,
+                'group_id' => $this->gid,
+                'user_id' => $this->uid,
+                'filename' =>  $this->gid . '/' . $this->repo_name . '/' . $this->subpath . '/' . $filename,
                 'full_path_with_file_name' => $files[$key]->uri,
                 'relative_path' => url($path = file_create_url("$this->relative_path/$filename")),
-                'subpath' => FALSE
+                'subpath' => $this->subpath,
             );
             $file_data[$array_key] = $file->get_file_info($params);
         }
