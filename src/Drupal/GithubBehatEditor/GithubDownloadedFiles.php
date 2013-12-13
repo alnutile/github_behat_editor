@@ -13,6 +13,7 @@ use Drupal\BehatEditor,
 
 class GithubDownloadedFiles extends BehatEditor\Files {
     public $files = '';
+    public $type = '';
     public $subpath = '';
     public $modules = array();
     public $cache = TRUE;
@@ -39,7 +40,8 @@ class GithubDownloadedFiles extends BehatEditor\Files {
     }
 
     public function getGroupFilesArray(){
-        $repos = new GithubBehatEditor\RepoManager() ;
+        $this->type = 'groups';
+        $repos = new GithubBehatEditor\RepoManager();
         $results = $repos->getGroupRepos($this->uid);
         $this->group_repos = $results['results'];
         $this->repos = $results['results'];
@@ -168,13 +170,10 @@ class GithubDownloadedFiles extends BehatEditor\Files {
     protected function _behatEditorScanDirectories() {
         $file_data = array();
         $files = file_scan_directory($this->absolute_path, '/.*\.feature/', $options = array('recurse' => TRUE), $depth = 0);
-        dpm($files);
         foreach($files as $key => $value) {
-
             $array_key = $key;
             $found_uri = array_slice(explode('/', $files[$key]->uri), 0, -1); //remove file name
             $base_uri = explode('/', $this->absolute_path);
-            dpm($this);
             if(count($found_uri) > count($base_uri)) {
                 $subpath = array_slice($found_uri, count($base_uri), 1);
                 $subpath = $subpath[0];
@@ -187,18 +186,22 @@ class GithubDownloadedFiles extends BehatEditor\Files {
             $module = 'behat_github';
             //, $this->repo_name, $filename, 'file', $test_path, $params
             $file = new GithubDownloadedFile();
+            $type_name = ($this->type == 'groups') ? 'groups' : 'users';
             $params = array(
                 'module' => $this->module,
                 'absolute_path' => $this->absolute_path,
                 'repo_name' => $this->repo_name,
                 'group_id' => $this->gid,
                 'user_id' => $this->uid,
-                'filename' =>  $this->gid . '/' . $this->repo_name . '/' . $this->subpath . '/' . $filename,
+                'id' => ($this->type == 'group') ? $this->gid : $this->uid,
+                'type' => $this->type,
+                'filename' =>  $type_name . '/' . $this->gid . '/' . $this->repo_name . '/' . $this->subpath . '/' . $filename,
                 'full_path_with_file_name' => $files[$key]->uri,
                 'relative_path' => url($path = file_create_url("$this->relative_path/$filename")),
                 'subpath' => $this->subpath,
             );
-            $file_data[$array_key] = $file->get_file_info($params);
+            $file->build_paths($params);
+            $file_data[$array_key] = $file->get_file_info();
         }
         return $file_data;
     }

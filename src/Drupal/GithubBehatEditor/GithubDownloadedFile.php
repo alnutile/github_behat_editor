@@ -46,24 +46,27 @@ class GithubDownloadedFile extends BehatEditor\File {
      */
 
     public function build_paths($params = array()){
-        /**
-         *     public $relative_path = '';
-         *     public $full_path_with_file = '';
-         *     public $full_path = '';
-         */
-            $gid = $params['gid'];
-            $uid = $params['uid'];
-            $id = $params['id'];
-            $this->type = $params['type'];
-            $this->repo_name = $params['repo_name'];
-            $this->subpath = $params['subpath'];
-            $this->filename = $params['filename'];
-
+        $gid = $params['gid'];
+        $uid = $params['uid'];
+        $id = $params['id'];
+        dpm($params);
+        $this->module = $params['module'];
+        $this->type = $params['type'];
+        $this->repo_name = $params['repo_name'];
+        $this->subpath = $params['subpath'];
+        $this->filename = $params['filename'];
+        if(isset($params['full_path_with_file_name'])) {
+            $this->full_path_with_file = $params['full_path_with_file_name'];
+            $this->relative_path = $params['relative_path'];
+            $this->full_path = $params['absolute_path'];
+        } else {
             $files_folder =  file_build_uri("/" . GithubDownloadedFile::ROOT . "/" . $this->type . "/{$id}/". $this->repo_name ."/" . $this->subpath);
             //Setup some info about the file
             $this->relative_path = url($path = file_create_url("$files_folder/$this->filename"));
             $this->full_path = drupal_realpath($files_folder);
             $this->full_path_with_file = $this->full_path . '/' . $this->filename;
+        }
+        dpm($this);
     }
 
     /**
@@ -96,10 +99,11 @@ class GithubDownloadedFile extends BehatEditor\File {
      *
      * @return array
      */
-    public function get_file_info($params = array(0)) {
+    public function get_file_info($params = array()) {
         if(file_exists($this->full_path_with_file) == FALSE) {
+            var_dump($this);
             $message = t('The file does not exist !file', array('!file' => $this->full_path_with_file));
-            throw new \RuntimeException($message);
+            //throw new \RuntimeException($message);
         } else {
             $file_text = self::read_file($this->full_path_with_file);
             $file_data = array(

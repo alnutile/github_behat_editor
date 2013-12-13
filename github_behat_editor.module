@@ -88,8 +88,8 @@ function github_behat_editor_behat_editor_files_found_alter(&$data, $context1 = 
     global $user;
     $files = new GithubBehatEditor\GithubDownloadedFiles();
     $group_files = $files->getGroupFilesArray();
+    dpm($group_files);
     $data = array_merge($data, $group_files);
-    dpm($data);
 
     //Append Array of files
     //key => behat_github
