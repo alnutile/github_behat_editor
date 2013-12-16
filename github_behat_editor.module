@@ -83,12 +83,12 @@ function github_behat_editor_cron() {
 
 }
 
-function github_behat_editor_behat_editor_files_found_alter(&$data, $context1 = array(), $context2 = array()) {
+function github_behat_editor_behat_editor_files_found_alter(&$data, $context1 = array()) {
     composer_manager_register_autoloader();
     global $user;
     $files = new GithubBehatEditor\GithubDownloadedFiles();
+    //Group Related Files
     $group_files = $files->getGroupFilesArray();
-    dpm($group_files);
     $data = array_merge($data, $group_files);
 
     //Append Array of files
@@ -99,18 +99,59 @@ function github_behat_editor_behat_editor_files_found_alter(&$data, $context1 = 
     //then get user files to append collection or overwrite as needed
 }
 
-function github_behat_editor_behat_editor_build_path_alter(&$data, $context1 ) {
+function github_behat_editor_behat_editor_build_path_alter(&$data, $params = array()) {
     global $user;
-    watchdog('test_alter', print_r($data, 1));
-    if(arg(3) == 'behat_github') {
-        $repo_name = arg(5);
-        $gid = arg(4);
-        $subfolder = arg(6);
-        $filename = arg(7);
-        $module = arg(3);
-        $action = arg(2);
-        $uid = $user->uid;
+    $module = '';
+    $filename = '';
+    $action = '';
+    $gid = '';
+    $type = '';
+    $repo_name = '';
+    $service_path = array();
+    $uid = $user->uid;
 
+    watchdog('test_arg_104', print_r(arg(), 1));
+    watchdog('test_params_106', print_r($params, 1));
+
+    if(arg(3) == 'behat_github' || (isset($params) && $params['module'] == 'behat_github')) {
+        $actions = array('view', 'edit', 'delete');
+        if(isset($params) && !in_array($params['action'], $actions)) {
+            //Run, CreateRun or Targeted Actions
+            $service_path = $params['service_path'];
+            $type = $service_path[5];
+            $repo_name = $service_path[7];
+            $action = $service_path[3];
+            $module = $service_path[4];
+            //Set Vars
+            if($type == 'groups') {
+                $gid = $service_path[6];
+            } else {
+                $gid = 0;
+            }
+        } else {
+//            dpm("You are an arg");
+            $service_path = arg();
+            $type = $service_path[4];
+            $repo_name = $service_path[6];
+            $action = $service_path[2];
+            $module = $service_path[3];
+            //Set Vars
+            if($type == 'groups') {
+                $gid = $service_path[5];
+            } else {
+                $gid = 0;
+            }
+        }
+//        dpm('Service Path');
+//        dpm($service_path);
+//        dpm("Args");
+//        dpm(arg());
+
+        $service_path_tweaked = $service_path;
+        $filename = array_pop($service_path_tweaked);
+
+        //Now process request based on user or group repo
+        //
         if($gid == 0) {
             //This is a user based repo so just need to verify access
         } else {
@@ -121,8 +162,8 @@ function github_behat_editor_behat_editor_build_path_alter(&$data, $context1 ) {
             $users_groups = $perms->getGroupIDs();
             if(!in_array($gid, $users_groups)){
                 //@todo better exit plan here
-                $message = t('You are not in this group');
-                throw new \RuntimeException($message);
+                drupal_set_message('You are not in this group');
+                drupal_goto('/');
             }
             //See now if they already have this folder
             $repo_manager = new GithubBehatEditor\RepoManager();
@@ -130,31 +171,26 @@ function github_behat_editor_behat_editor_build_path_alter(&$data, $context1 ) {
             $repos = $repo_manager->getGroupRepo(array('gid' => $gid, 'repo_name' => $repo_name));
             if(empty($repos['results']) || $repos['error'] == 1){
                 //@todo better exit plan here
-                $message = t('The !repo repo could not be found for the group', array('!repo' => $repo_name));
-                throw new \RuntimeException($message);
+                drupal_set_message(t('The !repo repo could not be found for the group', array('!repo' => $repo_name)));
+                drupal_goto('admin/behat/index');
             }
             $repo_data = $repos['results'][0];
-            watchdog('test_repo_data2', print_r($repo_data, 1));
-            $repo_url = $repo_data['repo_url'];
-            $repo_acount = $repo_data['repo_account'];
-            $full_name = $repo_acount .'/'. $repo_name; //just easier formatting for this clone command
-            $clone = $repo_manager->cloneRepo(array($full_name), array('uid' => $user->uid, ''));  //This will check if it is there already and get it if not
-
-            //Make a file object for the system for the behat_editor_build_path
-            $github_download_file = new GithubBehatEditor\GithubDownloadedFile();
+            $test_folder = $repo_data['folder'];
+            $repo_account = $repo_data['repo_account'];
+            $full_name = $repo_account .'/'. $repo_name;
+            $repo_manager->cloneRepo(array($full_name), array('uid' => $user->uid, ''));
+            $github_dowbload_files = new GithubBehatEditor\GithubDownloadedFile();
             $params = array(
-                'repo_name' => $repo_name,
-                'gid' => $gid,
-                'id' => $uid,
-                'uid' => $uid,
-                'subpath' => $subfolder,
-                'type' => 'users',
+                'service_path' => $service_path,
+                'module' => $module,
                 'filename' => $filename,
+                'action' => $action,
+                'subfolder' => $test_folder,
             );
-            $build_paths = $github_download_file->build_paths($params);
-            $file_info = $github_download_file->get_file_info();
+//            dpm("Params");
+//            dpm($params);
+            $file_info = $github_dowbload_files->buildObject($params);
             $data = $file_info;
-            watchdog("test_data_going_out", print_r($data, 1));
         }
     }
 }

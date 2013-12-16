@@ -171,7 +171,7 @@ class RepoManager {
                     drupal_set_message(t("There was a problem during the clone here is the @output", array('@output' => implode($clone['response']))));
                 }
             } else {
-                drupal_set_message(t("There @folder is a git folder already so we will just leave it alone for now.", array('@folder' => $this->public_absolute_path)));
+                drupal_set_message(t("This @folder is a git folder already so we will just leave it alone for now.", array('@folder' => $this->public_absolute_path)));
             }
         }
     }
@@ -211,7 +211,7 @@ class RepoManager {
                     watchdog('github_behat_editor', $message, $variables = array(), $severity = WATCHDOG_NOTICE, $link = FALSE);
                 }
             } else {
-                $message = t("There @folder is a git folder already so we will just leave it alone for now.", array('@folder' => $this->public_absolute_path));
+                $message = t("This @folder is a git folder already so we will just leave it alone for now.", array('@folder' => $this->public_absolute_path));
                 drupal_set_message($message);
                 watchdog('github_behat_editor', $message, $variables = array(), $severity = WATCHDOG_NOTICE, $link = FALSE);
             }
