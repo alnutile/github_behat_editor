@@ -48,6 +48,39 @@ class RepoManager {
         return array('results' => $records, 'error' => $results['error']);
     }
 
+
+    public function getUserRepoByRepoName($params){
+        $repos = array();
+        $this->uid = $params['uid'];
+        $repo_name = $params['repo_name'];
+        $queryRepos = new GithubRepoQueries();
+        $results = $queryRepos->selectAllByUid($this->uid);
+        $records = $results['results'];
+        foreach($records as $key => $value) {
+            if($value['repo_name'] == $repo_name) {
+                $repos[] = $value;
+            }
+        }
+        return $repos;
+    }
+
+    public function getUsersGroupRepoByRepoName($params){
+        $repos = array();
+        $repo_name = $params['repo_name'];
+        $this->uid = $params['uid'];
+        $settings = new BehatEditor\BehatPermissions($this->uid);
+        $gids = $settings->getGroupIDs();
+        $queryRepos = new GithubRepoQueries();
+        $results = $queryRepos->selectAllByGid($gids);
+        $records = $results['results'];
+        foreach($records as $key => $value) {
+            if($value['repo_name'] == $repo_name) {
+                $repos[] = $value;
+            }
+        }
+        return $repos;
+    }
+
     public function getGroupRepos($params){
         $this->uid = $params['uid'];
         $settings = new BehatEditor\BehatPermissions($this->uid);
@@ -65,6 +98,16 @@ class RepoManager {
         $results = $queryRepos->selectAllByGidAndRepoName($this->gid, $this->repo_name);
         $records = $results['results'];
         return array('results' => $records, 'error' => $results['error']);
+    }
+
+    public function checkEditPathRedirectIfNeeded($params) {
+        watchdog('test_params_redirect', print_r($params, 1));
+        if($params['action'] == 'edit') {
+            $path = $params['path'];
+            $path[4] = 'users';
+            $path[5] = $params['uid'];
+            drupal_goto(implode('/', $path));
+        }
     }
 
     public function setUserRepos(){
@@ -211,7 +254,7 @@ class RepoManager {
                     watchdog('github_behat_editor', $message, $variables = array(), $severity = WATCHDOG_NOTICE, $link = FALSE);
                 }
             } else {
-                $message = t("This @folder is a git folder already so we will just leave it alone for now.", array('@folder' => $this->public_absolute_path));
+                $message = t("This is a git folder already", array('@folder' => $this->public_absolute_path));
                 drupal_set_message($message);
                 watchdog('github_behat_editor', $message, $variables = array(), $severity = WATCHDOG_NOTICE, $link = FALSE);
             }

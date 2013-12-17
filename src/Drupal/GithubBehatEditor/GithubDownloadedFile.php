@@ -66,7 +66,7 @@ class GithubDownloadedFile extends BehatEditor\FileBuilder {
         $this->test_folder_and_file = implode('/', $test_folder_and_test_file_name);
         $test_folder = array_slice($test_folder_and_test_file_name, 0, -1);
         $test_folder_string = implode('/', $test_folder);
-        $this->subpath = $params['subpath'];
+        $this->subpath = $params['subfolder'];
         $this->root_folder = file_build_uri("/behat_github/" . $test_folder_string . "/");
         $this->full_path =  drupal_realpath($this->root_folder);
         $this->full_path_with_file =  $this->full_path . '/' . $this->filename;
@@ -78,9 +78,9 @@ class GithubDownloadedFile extends BehatEditor\FileBuilder {
 
     /**
      * Replaces fileObjectBuilder
+     * @todo move this back into FileBuilder
      */
     protected function setFileObject() {
-        watchdog('test_line_83', print_r($this->root_folder, 1));
         $file_object = array();
         $file_object['absolute_path_with_file'] = $this->full_path_with_file;
         $file_object['absolute_path'] = $this->full_path;
@@ -93,5 +93,26 @@ class GithubDownloadedFile extends BehatEditor\FileBuilder {
         $file_object['module'] = $this->module;
         return $file_object;
     }
+
+//    protected function _figure_out_where_to_save_file(){
+//        $output = $this->saveFileBackToGithubFolder();
+//        return $output;
+//    }
+//
+//    protected function saveFileBackToGithubFolder() {
+//        $output = array();
+//        $response = file_unmanaged_save_data($this->file_text, $this->full_path_with_file, $replace = FILE_EXISTS_REPLACE);
+//        watchdog('test_file_save_this', print_r($this, 1));
+//        if($response == FALSE) {
+//            $message = t('The file could not be saved !file ...', array('!file' => $this->full_path_with_file . '/' . $this->filename));
+//            //throw new \RuntimeException($message);
+//        } else {
+//            $file_url = l('click here', $this->relative_path, array('attributes' => array('target' => '_blank', 'id' => array('test-file'))));
+//            $date = format_date(time(), $type = 'medium', $format = '', $timezone = NULL, $langcode = NULL);
+//            $output = array('message' => t('@date: <br> File created !name to download ', array('@date' => $date, '!name' => $this->filename)), 'file' => $file_url, 'error' => '0');
+//        }
+//        return $output;
+//    }
+
 
 }
