@@ -40,6 +40,13 @@ class GithubBehatEditorController {
     public function getData(){
         return $this->data;
     }
+
+    public function cloneButton() {
+        $this->cloneButton = new GithubBehatEditor\GithubEditorFormHelper($this->user);
+        return $this->buttonCloneToRepo();
+    }
+
+
     /**
      * If the request comes in via View, Edit or Index
      * the settings will come from arg
@@ -89,10 +96,10 @@ class GithubBehatEditorController {
 
     protected function setUserOrGroupBasedRequest() {
 
-        if($this->gid == 0) {
+        if($this->gid == 0 && arg(4) != 'groups') {
             //This is a user based repo so just need to verify access
             $this->setUserBasedRequest();
-        } else { //Must be a group repo and view action
+        } else if ($this->gid != 0) { //Must be a group repo and view action
             $this->setGroupRequest();
         }
     }
@@ -100,19 +107,26 @@ class GithubBehatEditorController {
     protected function setUserBasedRequest() {
         //Get repos and see if
         //  1. user has repo
-        watchdog('test_repo_name', print_r($this->repo_name, 1));
-
+        if(!empty($this->repo_name)) {
+            $this->repo_name = arg(6);
+        }
+        $this->repo_manager = new RepoManager();
         $this->repos = $this->repo_manager->getUserRepoByRepoName(array('uid' => $this->user->uid, 'repo_name' => $this->repo_name));
-        if(empty($this->repos)) {
-            //One more check of their group level relations
-            $this->repos = $this->repo_manager->getUsersGroupRepoByRepoName(array('uid' => $this->user->uid, 'repo_name' => $this->repo_name));
-            if(empty($this->repos)) {
-                drupal_set_message('You and your group do not have access to this repo');
+        if(empty($this->repos['results'])) {
+            //check at group level
+            $this->repos = $this->repo_manager->getGroupRepos(array('uid' => $this->user->uid));
+            if(empty($this->repos['results'])) {
+                drupal_set_message('You do not have access to this repo');
                 drupal_goto('admin/behat/index');
             }
+            foreach($this->repos['results'] as $key => $value) {
+                if($value['repo_name'] == $this->repo_name) {
+                    $this->setupFileInfo();
+                    $this->data = $this->file_info;
+                    break;
+                }
+            }
         }
-        $this->setupFileInfo();
-        $this->data = $this->file_info;
         return $this->data;
     }
 
@@ -122,15 +136,16 @@ class GithubBehatEditorController {
         if(!in_array($this->gid, $this->users_groups)){
             //@todo better exit plan here
             drupal_set_message('You are not in this group');
-            drupal_goto('admin/behat/index');
+            //drupal_goto('admin/behat/index');
         }
         //See now if they already have this folder
         //Lets grab the full db info for this repo
+        $this->repo_manager = new RepoManager();
         $this->repos = $this->repo_manager->getGroupRepo(array('gid' => $this->gid, 'repo_name' => $this->repo_name));
         if(empty($this->repos['results']) || $this->repos['error'] == 1){
             //@todo better exit plan here
             drupal_set_message(t('The !repo repo could not be found for the group', array('!repo' => $this->repo_name)));
-            drupal_goto('admin/behat/index');
+            //drupal_goto('admin/behat/index');
         }
         $this->setupFileInfo();
         $this->data = $this->file_info;

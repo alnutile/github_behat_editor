@@ -78,6 +78,7 @@ function github_behat_editor_menu() {
 
 function github_behat_editor_form_alter(&$form, &$form_state) {
     $forms = array('behat-editor-edit-form', 'behat-editor-add-form', 'behat-editor-view-form');
+    global $user;
     if(in_array($form['#id'], $forms)) {
         $is_github = arg(3);
         /**
@@ -99,6 +100,21 @@ function github_behat_editor_form_alter(&$form, &$form_state) {
             $edit_path = implode('/', $edit_path);
             unset($form['actions']['delete_test']);
         }
+
+        /**
+         * Add Button
+         *
+         */
+
+        /**
+         * Clone to Button
+         *
+         */
+        if($is_github == 'behat_github' && ( $form['#id'] == 'behat-editor-view-form' || $form['#id'] == 'behat-editor-edit-form') ) {
+            $github_from = new GithubBehatEditor\GithubBehatEditorController();
+        }
+
+
     }
 }
 

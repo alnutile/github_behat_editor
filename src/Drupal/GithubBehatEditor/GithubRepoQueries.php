@@ -35,7 +35,6 @@ class GithubRepoQueries {
     }
 
     public function selectAllByGid(array $gids){
-        (!empty($uid)) ? $this->uid = $uid : null ;
         $query = db_select('github_behat_editor_repos', 'r');
         $query->fields('r');
         $query->condition('r.gid', $gids, 'IN');
