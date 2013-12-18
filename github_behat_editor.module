@@ -76,6 +76,47 @@ function github_behat_editor_menu() {
     return $items;
 }
 
+function github_behat_editor_form_alter(&$form, &$form_state) {
+    $forms = array('behat-editor-edit-form', 'behat-editor-add-form', 'behat-editor-view-form');
+    if(in_array($form['#id'], $forms)) {
+        $is_github = arg(3);
+        /**
+         * View Form
+         */
+        if($is_github == 'behat_github' && user_access("behat edit test") && $form['#id'] == 'behat-editor-view-form') {
+            $edit_path = arg();
+            $edit_path[2] = 'edit';
+            $edit_path = implode('/', $edit_path);
+            $form['actions']['edit_test'] = github_edit_test_array($edit_path);
+        }
+
+        /**
+         * Edit Form
+         */
+        if($is_github == 'behat_github' && $form['#id'] == 'behat-editor-edit-form') {
+            $edit_path = arg();
+            $edit_path[2] = 'edit';
+            $edit_path = implode('/', $edit_path);
+            unset($form['actions']['delete_test']);
+        }
+    }
+}
+
+function github_edit_test_array($path) {
+    if(user_access("behat edit test") ) {
+        return array(
+            '#type' => 'link',
+            '#name' => 'edit_test',
+            '#title' => t('Edit Test'),
+            '#href' => "$path",
+            '#attributes' => array('class' => array('btn', 'btn-info', 'edit')),
+        );
+    } else {
+        return array();
+    }
+
+}
+
 /**
  * Will be needed if github is down and commit is needed
  */

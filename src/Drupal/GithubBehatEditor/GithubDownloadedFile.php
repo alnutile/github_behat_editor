@@ -11,7 +11,7 @@ namespace Drupal\GithubBehatEditor;
 use Drupal\BehatEditor;
 
 
-class GithubDownloadedFile extends BehatEditor\FileBuilder {
+class GithubDownloadedFile extends BehatEditor\FileController {
     public $module = '';
     public $filename = '';
     public $parse_type = '';
@@ -78,7 +78,7 @@ class GithubDownloadedFile extends BehatEditor\FileBuilder {
 
     /**
      * Replaces fileObjectBuilder
-     * @todo move this back into FileBuilder
+     * @todo move this back into FileController
      */
     protected function setFileObject() {
         $file_object = array();

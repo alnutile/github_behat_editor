@@ -61,11 +61,19 @@ class GithubBehatEditorController {
                 $this->gid = 0;
             }
         } else {
-            $this->service_path = arg();
-            $this->type = $this->service_path[4];
-            $this->repo_name = $this->service_path[6];
-            $this->action = $this->service_path[2];
-            $this->module = $this->service_path[3];
+            if(isset($params) && $params['action'] == 'delete') {
+                $this->service_path = $params['service_path'];
+                $this->repo_name = $this->service_path[3];
+                $this->type = $this->service_path[1];
+                $this->action = 'delete';
+                $this->module = $this->service_path[0];
+            } else {
+                $this->service_path = arg();
+                $this->action = $this->service_path[2];
+                $this->repo_name = $this->service_path[6];
+                $this->type = $this->service_path[4];
+                $this->module = $this->service_path[3];
+            }
             //Set Vars
             if($this->type == 'groups') {
                 $this->gid = $this->service_path[5];
@@ -80,6 +88,7 @@ class GithubBehatEditorController {
 
 
     protected function setUserOrGroupBasedRequest() {
+
         if($this->gid == 0) {
             //This is a user based repo so just need to verify access
             $this->setUserBasedRequest();
@@ -91,6 +100,8 @@ class GithubBehatEditorController {
     protected function setUserBasedRequest() {
         //Get repos and see if
         //  1. user has repo
+        watchdog('test_repo_name', print_r($this->repo_name, 1));
+
         $this->repos = $this->repo_manager->getUserRepoByRepoName(array('uid' => $this->user->uid, 'repo_name' => $this->repo_name));
         if(empty($this->repos)) {
             //One more check of their group level relations
@@ -127,14 +138,16 @@ class GithubBehatEditorController {
     }
 
     private function setupFileInfo(){
-        $this->repo_data = $this->repos['results'][0];
-        $this->test_folder = $this->repo_data['folder'];
-        $this->repo_account = $this->repo_data['repo_account'];
-        $this->full_name = $this->repo_account .'/'. $this->repo_name;
-        $this->repo_manager->cloneRepo(array($this->full_name), array('uid' => $this->user->uid, ''));
-        $this->github_download_files = new GithubBehatEditor\GithubDownloadedFile();
-        $this->params = $this->fileObjectParams();
-        $this->file_info = $this->github_download_files->buildObject($this->params);
+        if (isset($this->repos)) {
+            $this->repo_data = $this->repos['results'][0];
+            $this->test_folder = $this->repo_data['folder'];
+            $this->repo_account = $this->repo_data['repo_account'];
+            $this->full_name = $this->repo_account .'/'. $this->repo_name;
+            $this->repo_manager->cloneRepo(array($this->full_name), array('uid' => $this->user->uid, ''));
+            $this->github_download_files = new GithubBehatEditor\GithubDownloadedFile();
+            $this->params = $this->fileObjectParams();
+            $this->file_info = $this->github_download_files->buildObject($this->params);
+        }
     }
 
     private function fileObjectParams() {
