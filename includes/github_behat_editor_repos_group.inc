@@ -21,7 +21,7 @@ function github_behat_editor_group_repo_settings($form, &$form_state) {
         '#markup' => t('Manage your repos. See other tab for user related repos')
     );
 
-    $repos = new Drupal\GithubBehatEditor\RepoManager() ;
+    $repos = new Drupal\GithubBehatEditor\RepoModel() ;
 
     $groupRepos = $repos->getGroupRepos($user->uid);
 
@@ -106,7 +106,7 @@ function github_behat_editor_group_repo_settings_submit($form, &$form_state) {
     $operation = $form_state['values']['operation'];
     $ids = array_filter($form_state['values']['dashboard']);
     if($operation == 'delete') {
-        Drupal\GithubBehatEditor\RepoManager::removeRepo($ids);
+        Drupal\GithubBehatEditor\RepoModel::removeRepo($ids);
         drupal_set_message(t("Your @count repos where removed from your account", array('@count' => count($ids))));
     }
 }

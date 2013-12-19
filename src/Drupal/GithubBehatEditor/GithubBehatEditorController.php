@@ -26,111 +26,59 @@ class GithubBehatEditorController {
     protected $data = '';
     protected $users_groups = array();
     protected $perms = array();
+    protected $arg = array();
+    public $repos_by_repo_name = array();
+    public $files_array = array();
+    public $files_array_alter = array();
+    public $user_and_group_repos = array();
 
 
     public function __construct($params = array()) {
         composer_manager_register_autoloader();
         global $user;
         $this->user = $user;
-        $this->repo_manager = new GithubBehatEditor\RepoManager();
-        $this->setupParams($params);
-        $this->setUserOrGroupBasedRequest();
+        $this->repo_manager = new GithubBehatEditor\RepoModel();
     }
-
-    public function getData(){
-        return $this->data;
-    }
-
-    public function cloneButton() {
-        $this->cloneButton = new GithubBehatEditor\GithubEditorFormHelper($this->user);
-        return $this->buttonCloneToRepo();
-    }
-
 
     /**
-     * If the request comes in via View, Edit or Index
-     * the settings will come from arg
-     * Else they are being passed in a REQUEST
+     * This is here to keep a user out of Edit Group/Team repo
+     * But redirect them to their repo.
      * @param $params
      */
-    protected function setupParams($params){
-        if(isset($params) && !in_array($params['action'], $this->actions)) {
-            //Run, CreateRun or Targeted Actions
-            $this->service_path = $params['service_path'];
-            $this->type = $this->service_path[5];
-            $this->repo_name = $this->service_path[7];
-            $this->action = $this->service_path[3];
-            $this->module = $this->service_path[4];
-            //Set Vars
-            if($this->type == 'groups') {
-                $this->gid = $this->service_path[6];
-            } else {
-                $this->gid = 0;
-            }
-        } else {
-            if(isset($params) && $params['action'] == 'delete') {
-                $this->service_path = $params['service_path'];
-                $this->repo_name = $this->service_path[3];
-                $this->type = $this->service_path[1];
-                $this->action = 'delete';
-                $this->module = $this->service_path[0];
-            } else {
-                $this->service_path = arg();
-                $this->action = $this->service_path[2];
-                $this->repo_name = $this->service_path[6];
-                $this->type = $this->service_path[4];
-                $this->module = $this->service_path[3];
-            }
-            //Set Vars
-            if($this->type == 'groups') {
-                $this->gid = $this->service_path[5];
-                $this->repo_manager->checkEditPathRedirectIfNeeded(array('uid' => $this->user->uid, 'path' => $this->service_path, 'action' => $this->action));
-            } else {
-                $this->gid = 0;
-            }
-        }
-        $service_path_tweaked = $this->service_path;
-        $this->filename = array_pop($service_path_tweaked);
-    }
-
-
-    protected function setUserOrGroupBasedRequest() {
-
-        if($this->gid == 0 && arg(4) != 'groups') {
-            //This is a user based repo so just need to verify access
-            $this->setUserBasedRequest();
-        } else if ($this->gid != 0) { //Must be a group repo and view action
-            $this->setGroupRequest();
+    public function redirectFromGroupToUserRepo($params) {
+        $this->data = $params['data'];
+        $this->arg = $params['arg'];
+        $path = explode('/', $this->data['absolute_path']);
+        $path_start = array_search('behat_github', $path);
+        $group_or_user = $path[$path_start + 1];
+        $this->action = $params['mode'];
+        $this->service_path = $path;
+        if($group_or_user == 'groups') {
+            $this->repo_manager->checkEditPathRedirectIfNeeded(array('uid' => $this->user->uid, 'path' => $this->arg, 'action' => $this->action));
         }
     }
 
-    protected function setUserBasedRequest() {
-        //Get repos and see if
-        //  1. user has repo
-        if(!empty($this->repo_name)) {
-            $this->repo_name = arg(6);
+    /**
+     * Check Access
+     */
+    public function checkAccess($params){
+        $this->data = $params['data'];
+        $this->arg = $params['arg'];
+        $path = explode('/', $this->data['absolute_path']);
+        $path_start = array_search('behat_github', $path);
+        $group_or_user = $path[$path_start + 1];
+        $this->action = $params['mode'];
+        $this->service_path = $path;
+        if($group_or_user == 'groups') {
+            $this->checkGroupRequest();
+            $this->checkGroupRepoAccess();
         }
-        $this->repo_manager = new RepoManager();
-        $this->repos = $this->repo_manager->getUserRepoByRepoName(array('uid' => $this->user->uid, 'repo_name' => $this->repo_name));
-        if(empty($this->repos['results'])) {
-            //check at group level
-            $this->repos = $this->repo_manager->getGroupRepos(array('uid' => $this->user->uid));
-            if(empty($this->repos['results'])) {
-                drupal_set_message('You do not have access to this repo');
-                drupal_goto('admin/behat/index');
-            }
-            foreach($this->repos['results'] as $key => $value) {
-                if($value['repo_name'] == $this->repo_name) {
-                    $this->setupFileInfo();
-                    $this->data = $this->file_info;
-                    break;
-                }
-            }
-        }
-        return $this->data;
+        //if groups check user access to group and repo
+
+        //if users check users access to repo
     }
 
-    protected function setGroupRequest(){
+    protected function checkGroupRequest(){
         $this->perms = new BehatEditor\BehatPermissions($this->user->uid);
         $this->users_groups = $this->perms->getGroupIDs();
         if(!in_array($this->gid, $this->users_groups)){
@@ -138,41 +86,93 @@ class GithubBehatEditorController {
             drupal_set_message('You are not in this group');
             //drupal_goto('admin/behat/index');
         }
-        //See now if they already have this folder
-        //Lets grab the full db info for this repo
-        $this->repo_manager = new RepoManager();
+    }
+
+    protected function checkGroupRepoAccess(){
         $this->repos = $this->repo_manager->getGroupRepo(array('gid' => $this->gid, 'repo_name' => $this->repo_name));
         if(empty($this->repos['results']) || $this->repos['error'] == 1){
             //@todo better exit plan here
             drupal_set_message(t('The !repo repo could not be found for the group', array('!repo' => $this->repo_name)));
             //drupal_goto('admin/behat/index');
         }
-        $this->setupFileInfo();
-        $this->data = $this->file_info;
-        return $this->data;
     }
 
-    private function setupFileInfo(){
-        if (isset($this->repos)) {
-            $this->repo_data = $this->repos['results'][0];
-            $this->test_folder = $this->repo_data['folder'];
-            $this->repo_account = $this->repo_data['repo_account'];
-            $this->full_name = $this->repo_account .'/'. $this->repo_name;
-            $this->repo_manager->cloneRepo(array($this->full_name), array('uid' => $this->user->uid, ''));
-            $this->github_download_files = new GithubBehatEditor\GithubDownloadedFile();
-            $this->params = $this->fileObjectParams();
-            $this->file_info = $this->github_download_files->buildObject($this->params);
+    /**
+     * Get the users repos and the groups repos
+     * merge the array this leaves us the users ones first.
+     * then for each one
+     * get the relatated files
+     *
+     * @param array $data
+     */
+    public function index($data = array()){
+        $this->files_array = $data;
+        $this->getUserRepos();
+        $this->repos_by_repo_name = $this->user_and_group_repos;
+        $this->getUsersGroupRepo();
+        $this->repos_by_repo_name = array_merge($this->user_and_group_repos, $this->repos_by_repo_name);
+        //now parse the directories for these files
+        $this->getRepoFiles();
+        $this->files_array = array_merge($this->files_array, $this->files_array_alter);
+        return $this->files_array;
+    }
+
+    protected  function getUserRepos(){
+        $repos = $this->repo_manager->getUserRepos($this->user->uid);
+        $this->repos = $repos['results'];
+        //@todo do a pull before this so we have the latest files
+        $this->keyReposByName();
+        $this->user_and_group_repos = $this->keyReposByName();
+    }
+
+    protected  function getUsersGroupRepo(){
+        $repos = $this->repo_manager->getGroupRepos($this->user->uid);
+        $this->repos = $repos['results'];
+        $this->user_and_group_repos = $this->keyReposByName();
+    }
+
+    protected function keyReposByName() {
+        $repos_by_name = array();
+        if(isset($this->repos)){
+            foreach($this->repos as $key => $value){
+                if($value['active'] == 1) {
+                    $repos_by_name[$value['repo_name']]['repo_name'] = $value['repo_name'];
+                    $repos_by_name[$value['repo_name']]['gid'] = $value['gid'];
+                    $repos_by_name[$value['repo_name']]['uid'] = $value['uid'];
+                    $repos_by_name[$value['repo_name']]['folder'] = $value['folder'];
+                }
+            }
         }
+        return $repos_by_name;
     }
 
-    private function fileObjectParams() {
-        return array(
-            'service_path' => $this->service_path,
-            'module' => $this->module,
-            'filename' => $this->filename,
-            'action' => $this->action,
-            'subfolder' => $this->test_folder,
-        );
+    protected function getRepoFiles() {
+        $filename = null;
+        $file_data = array();
+        foreach($this->repos as $key => $value) {
+            ($value['gid'] == 0) ? $base = 'users' : $base = 'groups';
+            ($value['gid'] == 0) ?  $id = $value['uid'] : $id = $value['gid'];
+            $service_path = "behat_github/{$base}/{$id}/{$value['repo_name']}/{$value['folder']}";
+
+            $root_path = file_build_uri("$service_path");
+            $full_root_path = drupal_realpath($root_path);
+            $files = file_scan_directory($full_root_path, '/.*\.feature/', $options = array('recurse' => TRUE), $depth = 0);
+            foreach($files as $file_key => $file_value) {
+                $array_key =$file_value->uri;
+                $filename = $file_value->filename;
+                $full_service_path_string = $service_path . '/' . $filename;
+                $full_service_path_array = explode('/', $full_service_path_string);
+                $params = array(
+                    'filename' => $filename,
+                    'module' => 'behat_github',
+                    'parse_type' => 'file',
+                    'service_path' => $full_service_path_array /* @todo this can be a subfolder issue */
+                );
+                $file = new BehatEditor\FileModel($params);
+                $file_data[$array_key] = $file->getFile();
+            }
+            $this->files_array_alter[$value['repo_name']] = $file_data;
+        }
     }
 
 }
