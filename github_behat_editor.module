@@ -78,6 +78,7 @@ function github_behat_editor_menu() {
 
 function github_behat_editor_form_alter(&$form, &$form_state) {
     $forms = array('behat-editor-edit-form', 'behat-editor-add-form', 'behat-editor-view-form');
+    global $user;
     if(in_array($form['#id'], $forms)) {
         $is_github = arg(3);
         /**
@@ -98,6 +99,19 @@ function github_behat_editor_form_alter(&$form, &$form_state) {
             $edit_path[2] = 'edit';
             $edit_path = implode('/', $edit_path);
             unset($form['actions']['delete_test']);
+        }
+
+        /**
+         * Add Button
+         *
+         */
+
+        /**
+         * Clone to Button
+         *
+         */
+        if($is_github == 'behat_github' && ( $form['#id'] == 'behat-editor-view-form' || $form['#id'] == 'behat-editor-edit-form') ) {
+            $github_from = new GithubBehatEditor\GithubBehatEditorController();
         }
     }
 }
@@ -124,20 +138,58 @@ function github_behat_editor_cron() {
 
 }
 
+/**
+ * Alter the show hook_behat_editor_show()
+ */
+
+function github_behat_editor_behat_editor_edit_alter(&$data) {
+    if($data['module'] == 'behat_github') {
+        /**
+         * 1. Make sure if the urls is groups we switch to the users path
+         * 2. Check if the user is in the group
+         * 3. Check if the group or user even has access to this repo
+         */
+        $github_load = new GithubBehatEditor\GithubBehatEditorController();
+        $github_load->checkAccess(array('data' => $data, 'mode' => 'edit', 'arg' => arg()));
+        $github_load->redirectFromGroupToUserRepo(array('data' => $data, 'mode' => 'edit', 'arg' => arg()));
+    }
+}
+
+
+/**
+ * Alter the show hook_behat_editor_index()
+ */
+
+function github_behat_editor_behat_editor_index_alter(&$data) {
+        /**
+         * 1. Get all the repos for the user
+         * 2. Get all the repos for the group
+         * 3. format them for the table output
+         *
+         * If user has version of repo file it should win out
+         */
+        $github_load = new GithubBehatEditor\GithubBehatEditorController();
+        $data = $github_load->index($data);
+
+}
+
+
+
+
 function github_behat_editor_behat_editor_files_found_alter(&$data, $context1 = array()) {
-    composer_manager_register_autoloader();
-    global $user;
-    $files = new GithubBehatEditor\GithubDownloadedFiles();
-    //Group Related Files
-    $group_files = $files->getGroupFilesArray();
-    $data = array_merge($data, $group_files);
+//    composer_manager_register_autoloader();
+//    global $user;
+//    $files = new GithubBehatEditor\GithubDownloadedFiles();
+//    //Group Related Files
+//    $group_files = $files->getGroupFilesArray();
+//    $data = array_merge($data, $group_files);
 }
 
 function github_behat_editor_behat_editor_build_path_alter(&$data, $params = array()) {
     global $user;
-
+    //@todo no longer needed now that I cleaned up the path issue
     if(arg(3) == 'behat_github' || (isset($params) && $params['module'] == 'behat_github')) {
-        $results = new GithubBehatEditor\GithubBehatEditorController($params);
-        $data = $results->getData();
+//        $results = new GithubBehatEditor\GithubBehatEditorController($params);
+//        $data = $results->getData();
     }
 }

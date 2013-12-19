@@ -14,7 +14,7 @@ use Drupal\BehatEditor;
  * Time: 4:08 AM
  */
 
-class RepoManager {
+class RepoModel {
     private $uid;
     public $results;
     public $repos;
@@ -101,7 +101,6 @@ class RepoManager {
     }
 
     public function checkEditPathRedirectIfNeeded($params) {
-        watchdog('test_params_redirect', print_r($params, 1));
         if($params['action'] == 'edit') {
             $path = $params['path'];
             $path[4] = 'users';
@@ -198,7 +197,7 @@ class RepoManager {
             //Get username and passwords
             $username = variable_get('github_api_username');
             $password = variable_get('github_api_password');
-            $full_repo_path = RepoManager::PROTOCOL . "://$username:$password@".RepoManager::URI."/$repo";
+            $full_repo_path = RepoModel::PROTOCOL . "://$username:$password@".RepoModel::URI."/$repo";
 
             if( self::_conditions() ) {
                 drupal_set_message(t('Folder @folder already exists so I will not create it', array('@folder' => $this->repo_name)), 'info');
@@ -232,7 +231,7 @@ class RepoManager {
             //Get username and passwords
             $username = variable_get('github_api_username');
             $password = variable_get('github_api_password');
-            $full_repo_path = RepoManager::PROTOCOL . "://$username:$password@".RepoManager::URI."/$repo";
+            $full_repo_path = RepoModel::PROTOCOL . "://$username:$password@".RepoModel::URI."/$repo";
 
             $this->gid = 0;
             if( self::_conditions() ) {
@@ -265,9 +264,9 @@ class RepoManager {
     private function _build_path_group() {
         $repo_name = $this->repo_name;
         $gid = $this->gid;
-        $path = "public://".RepoManager::GITHUB_FOLDER."/groups/$gid";
+        $path = "public://".RepoModel::GITHUB_FOLDER."/groups/$gid";
         file_prepare_directory($path, FILE_CREATE_DIRECTORY);
-        $public = file_build_uri("/".RepoManager::GITHUB_FOLDER."/groups/$gid");
+        $public = file_build_uri("/".RepoModel::GITHUB_FOLDER."/groups/$gid");
         $relative_path = $public . '/' . $repo_name;
         return $relative_path;
     }
@@ -275,9 +274,9 @@ class RepoManager {
     private function _build_path_user() {
         $repo_name = $this->repo_name;
         $uid = $this->uid;
-        $path = "public://".RepoManager::GITHUB_FOLDER."/users/$uid";
+        $path = "public://".RepoModel::GITHUB_FOLDER."/users/$uid";
         file_prepare_directory($path, FILE_CREATE_DIRECTORY);
-        $public = file_build_uri("/".RepoManager::GITHUB_FOLDER."/users/$uid");
+        $public = file_build_uri("/".RepoModel::GITHUB_FOLDER."/users/$uid");
         $relative_path = $public . '/' . $repo_name;
         return $relative_path;
     }
