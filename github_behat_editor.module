@@ -106,6 +106,36 @@ function github_behat_editor_form_alter(&$form, &$form_state) {
          *
          */
 
+        if($form['#id'] == 'behat-editor-add-form') {
+            global $user;
+            $github_from = new GithubBehatEditor\GithubBehatEditorController();
+            $repos = $github_from->getallreposforuser($user);
+            $links = array();
+            $path = drupal_get_path('module', 'github_behat_editor');
+            foreach($repos as $key => $value){
+                $data['data-gid'] = $value['gid'];
+                $data['data-uid'] = $value['uid'];
+                $data['data-repo-name'] = $value['repo_name'];
+                $data['data-folder'] = $value['folder'];
+                $data['data-module'] = $value['repo_name'];
+                ($value['gid'] == 0) ? $type = 'users' : $type = 'groups';
+                ($value['gid'] == 0) ? $id = $value['uid'] : $id = $value['gid'];
+                //For right now force into user folder they really should all be set as needed.
+                $links[] = l($value['repo_name'], "behat_github/users/{$value['uid']}/{$value['repo_name']}/{$value['folder']}");
+            }
+
+            $list = theme('item_list', array('items' => $links, 'attributes' => array('class' => array('dropdown-menu'), 'role' => 'menu')));
+            $form['actions']['github_add'] = array(
+                '#type' => "button",
+                '#value' => t('Add to Repo<span class="caret"></span>'),
+                '#attributes' => array('type' => 'button', 'class' => array('btn', 'btn-danger', 'dropdown-toggle'), 'data-toggle' => 'dropdown'),
+                '#prefix' => '<div class="btn-group gitrepo-choose">',
+                '#suffix' => $list . '</div>'
+            );
+            $form['#attached']['js']['github_behat_editor_add'] = $path . '/js/github_behat_editor_add.js';
+
+        }
+
         /**
          * Clone to Button
          *
