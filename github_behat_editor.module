@@ -192,11 +192,38 @@ function github_behat_editor_behat_editor_edit_alter(&$data) {
 
 function github_behat_editor_behat_editor_after_create_alter(&$data) {
     if($data['module'] == 'behat_github') {
-        watchdog('test_after_create', print_r($data, 1));
         $git_actions = new GithubBehatEditor\GithubBehatEditorController();
-        $git_actions->create($data);
+        $results = $git_actions->create($data);
+        //@todo not sure the best way to send back data.
+        if($results['error'] == 0) {
+            return $results;
+        } else {
+            drupal_set_message('github_editor_create', t('Error processing file !error', array('!error' => $results['message'])));
+            $service_path = implode('/', $data['service_path']);
+            drupal_goto("admin/behat/edit/{$service_path}");
+        }
     }
 }
+
+/**
+ * Alter the show hook_behat_editor_show()
+ */
+
+function github_behat_editor_behat_editor_after_save_alter(&$data) {
+    if($data['module'] == 'behat_github') {
+        $git_actions = new GithubBehatEditor\GithubBehatEditorController();
+        $results = $git_actions->update($data);
+        //@todo not sure the best way to send back data.
+        if($results['error'] == 0) {
+            return $results;
+        } else {
+            drupal_set_message('github_editor_create', t('Error processing file !error', array('!error' => $results['message'])));
+            $service_path = implode('/', $data['service_path']);
+            drupal_goto("admin/behat/edit/{$service_path}");
+        }
+    }
+}
+
 
 
 
