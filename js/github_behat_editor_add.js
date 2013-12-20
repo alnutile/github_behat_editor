@@ -4,13 +4,13 @@
         attach: function (context) {
             var token = Drupal.behat_editor.get_token();
 
-            $('div.gitrepo-choose a').click(function(e){
-                e.preventDefault();
-                var filename = $('input[name=filename]').val();
-                $('#githubModal .filename').text(filename);
-                $('#githubModal').modal();
-                e.preventDefault();
-            });
+//            $('div.gitrepo-choose a').click(function(e){
+//                e.preventDefault();
+//                var filename = $('input[name=filename]').val();
+//                $('#githubModal .filename').text(filename);
+//                $('#githubModal').modal();
+//                e.preventDefault();
+//            });
 
             $('div.gitrepo-choose a').click(function(e){
                 $('#githubModal').modal('hide');

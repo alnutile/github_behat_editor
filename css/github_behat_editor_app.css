@@ -1,0 +1,11 @@
+.btn-group.gitrepo-choose {
+    height: 50px;
+    padding-top: 6px;
+    min-width: 175px;
+}
+
+
+button#edit-github-add {
+   height: 40px;
+   min-width: 100%;
+}

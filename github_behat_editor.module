@@ -133,6 +133,7 @@ function github_behat_editor_form_alter(&$form, &$form_state) {
                 '#suffix' => $list . '</div>'
             );
             $form['#attached']['js']['github_behat_editor_add'] = $path . '/js/github_behat_editor_add.js';
+            $form['#attached']['css']['github_behat_editor_add'] = $path . '/css/github_behat_editor_app.css';
 
         }
 
@@ -184,6 +185,19 @@ function github_behat_editor_behat_editor_edit_alter(&$data) {
         $github_load->redirectFromGroupToUserRepo(array('data' => $data, 'mode' => 'edit', 'arg' => arg()));
     }
 }
+
+/**
+ * Alter the show hook_behat_editor_show()
+ */
+
+function github_behat_editor_behat_editor_after_create_alter(&$data) {
+    if($data['module'] == 'behat_github') {
+        watchdog('test_after_create', print_r($data, 1));
+        $git_actions = new GithubBehatEditor\GithubBehatEditorController();
+        $git_actions->create($data);
+    }
+}
+
 
 
 /**
