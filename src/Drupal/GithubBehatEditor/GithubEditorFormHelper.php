@@ -13,6 +13,7 @@ use Drupal\GithubBehatEditor;
 
 class GithubEditorFormHelper {
     protected $user;
+    public $all_repos = array();
 
     public function __construct($user){
         $this->user = $user;
@@ -21,14 +22,20 @@ class GithubEditorFormHelper {
     public function buttonCloneToRepo() {
         $button = array();
         $this->getAllRepos();
+        return $button;
+    }
 
+    public function buttonAdd() {
+        $button = array();
+        $this->getAllRepos();
+        dpm($this->all_repos);
         return $button;
     }
 
     protected function getAllRepos() {
         $repos = new GithubRepoQueries();
-        $users = $repos->selectAllByUid($this->user->uid);
-        dpm($users);
+        $all_repos = $repos->selectAllByUid($this->user->uid);
+        $this->all_repos = $all_repos['results'];
     }
 
 

@@ -16,6 +16,10 @@ use TQ\Git\Repository\Repository,
 class GitActions {
     protected $git;
     protected $git_path;
+    protected $data;
+    protected $full_path_to_repo_folder;
+    protected $full_path_to_file_folder;
+    protected $full_path_to_file;
 
     public function __construct() {
         composer_manager_register_autoloader();
@@ -33,6 +37,32 @@ class GitActions {
     }
 
     public function createCommit(){
+
+    }
+
+    public function create($data){
+        $this->data = $data;
+        $service_path_full_array = $this->data['service_path'];
+        //This next one will get us down to the repo folder
+        $service_path_full_trim_to_root_folder = array_slice($service_path_full_array, 0, 4);
+        $service_path_full_trim_to_root_folder_string = implode('/', $service_path_full_trim_to_root_folder);
+        $service_path_full_trim_to_root_folder_absolute = file_build_uri($service_path_full_trim_to_root_folder_string);
+        $this->full_path_to_repo_folder = drupal_realpath($service_path_full_trim_to_root_folder_absolute);
+        $this->full_path_to_file = $this->data['absolute_path_with_file'];
+        $this->full_path_to_file_folder = $this->data['absolute_path'];
+        $this->git = Repository::open($this->full_path_to_repo_folder, $this->git_path);
+        $this->git->add(array($this->full_path_to_file));
+        $this->git->commit("Testing 123", array($this->full_path_to_file), $author = null);
+        //If results good
+        //git pull in that dir
+        exec("cd $this->full_path_to_file_folder && git pull", $output, $return_var);
+        watchdog('test_pull', print_r($output, 1));
+        exec("cd $this->full_path_to_file_folder && git push", $output, $return_var);
+        watchdog('test_push', print_r($output, 1));
+        //git push just that file
+        //git push
+        watchdog('test_git', print_r($this->git->getLog(5), 1));
+        watchdog('test_git_output', print_r($output, 1));
 
     }
 

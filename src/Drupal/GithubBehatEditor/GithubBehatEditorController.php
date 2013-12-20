@@ -117,6 +117,21 @@ class GithubBehatEditorController {
         return $this->files_array;
     }
 
+    public function create($data = array()) {
+        $git_action = new GitActions();
+        $results = $git_action->create($data);
+        //watchdog('test_after_create', print_r($results, 1));
+    }
+
+    public function getAllReposForUser($user) {
+        $this->getUserRepos();
+        $this->repos_by_repo_name = $this->user_and_group_repos;
+        $this->getUsersGroupRepo();
+        $this->repos_by_repo_name = array_merge($this->user_and_group_repos, $this->repos_by_repo_name);
+        //now parse the directories for these files
+        return $this->repos_by_repo_name;
+    }
+
     protected  function getUserRepos(){
         $repos = $this->repo_manager->getUserRepos($this->user->uid);
         $this->repos = $repos['results'];
