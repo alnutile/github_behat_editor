@@ -106,10 +106,13 @@ class GithubBehatEditorController {
      * @param array $data
      */
     public function index($data = array()){
+        //@todo move much of this logic into model
         $this->files_array = $data;
         $this->getUserRepos();
+        $this->updateAllRepos($this->user_and_group_repos);
         $this->repos_by_repo_name = $this->user_and_group_repos;
         $this->getUsersGroupRepo();
+        $this->updateAllRepos($this->user_and_group_repos, 'groups');
         $this->repos_by_repo_name = array_merge($this->user_and_group_repos, $this->repos_by_repo_name);
         //now parse the directories for these files
         $this->getRepoFiles();
@@ -137,6 +140,27 @@ class GithubBehatEditorController {
         $this->repos_by_repo_name = array_merge($this->user_and_group_repos, $this->repos_by_repo_name);
         //now parse the directories for these files
         return $this->repos_by_repo_name;
+    }
+
+    /**
+     * @params
+     *  array of user repos from Repomanager::getUserRepos
+     *
+     */
+    protected function updateAllRepos($repos, $type = 'users') {
+        //Repos start in behat_github
+        //from there depending on the $type is where they sit
+        foreach($repos as $key => $value){
+            $repo_name = $value['repo_name'];
+            $folder = $value['folder'];
+            ($type == 'users') ? $id = $value['uid'] : $id = $value['gid'];
+            $path = "behat_github/$type/$id/$repo_name/$folder";
+            $path_uri =  file_build_uri("/{$path}/");
+            $absolute_path = drupal_realpath($path_uri);
+            exec("cd $absolute_path && git pull", $output, $return_val);
+            watchdog('test_output', print_r($output, 1));
+            watchdog('test_return_val', print_r($return_val, 1));
+        }
     }
 
     protected  function getUserRepos(){
