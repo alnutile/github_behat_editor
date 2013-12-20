@@ -137,6 +137,39 @@ function github_behat_editor_form_alter(&$form, &$form_state) {
 
         }
 
+
+
+        if($form['#id'] == 'behat-editor-view-form') {
+            global $user;
+            $github_from = new GithubBehatEditor\GithubBehatEditorController();
+            $repos = $github_from->getallreposforuser($user);
+            $links = array();
+            $path = drupal_get_path('module', 'github_behat_editor');
+            foreach($repos as $key => $value){
+                $data['data-gid'] = $value['gid'];
+                $data['data-uid'] = $value['uid'];
+                $data['data-repo-name'] = $value['repo_name'];
+                $data['data-folder'] = $value['folder'];
+                $data['data-module'] = $value['repo_name'];
+                ($value['gid'] == 0) ? $type = 'users' : $type = 'groups';
+                ($value['gid'] == 0) ? $id = $value['uid'] : $id = $value['gid'];
+                //For right now force into user folder they really should all be set as needed.
+                $links[] = l($value['repo_name'], "behat_github/users/{$value['uid']}/{$value['repo_name']}/{$value['folder']}");
+            }
+
+            $list = theme('item_list', array('items' => $links, 'attributes' => array('class' => array('dropdown-menu'), 'role' => 'menu')));
+            $form['actions']['github_add'] = array(
+                '#type' => "button",
+                '#value' => t('Clone to Repo<span class="caret"></span>'),
+                '#attributes' => array('type' => 'button', 'class' => array('btn', 'btn-danger', 'dropdown-toggle'), 'data-toggle' => 'dropdown'),
+                '#prefix' => '<div class="btn-group gitrepo-choose">',
+                '#suffix' => $list . '</div>'
+            );
+            $form['#attached']['js']['github_behat_editor_add'] = $path . '/js/github_behat_editor_clone.js';
+            $form['#attached']['css']['github_behat_editor_add'] = $path . '/css/github_behat_editor_app.css';
+
+        }
+
         /**
          * Clone to Button
          *
@@ -196,11 +229,33 @@ function github_behat_editor_behat_editor_after_create_alter(&$data) {
         $results = $git_actions->create($data);
         //@todo not sure the best way to send back data.
         if($results['error'] == 0) {
-            return $results;
+            drupal_set_message(t('File Added and Pushed to repo !message', array('!message' => $results['message'])));
+            //@todo push this message back to the screen using ajax
+            $data['messages'][] = $results['message'];
         } else {
-            drupal_set_message('github_editor_create', t('Error processing file !error', array('!error' => $results['message'])));
-            $service_path = implode('/', $data['service_path']);
-            drupal_goto("admin/behat/edit/{$service_path}");
+            drupal_set_message(t('Error processing file !error', array('!error' => $results['message'])));
+            $data['messages'][] =  t('Error adding file to the repo file !error', array('!error' => $results['message']));
+        }
+    }
+}
+
+
+/**
+ * Alter the show hook_behat_editor_show()
+ */
+
+function github_behat_editor_behat_editor_after_view_alter(&$data) {
+    if($data['module'] == 'behat_github') {
+        $git_actions = new GithubBehatEditor\GithubBehatEditorController();
+        $results = $git_actions->create($data);
+        //@todo not sure the best way to send back data.
+        if($results['error'] == 0) {
+            drupal_set_message(t('File Added and Pushed to repo !message', array('!message' => $results['message'])));
+            //@todo push this message back to the screen using ajax
+            $data['messages'][] = $results['message'];
+        } else {
+            drupal_set_message(t('Error processing file !error', array('!error' => $results['message'])));
+            $data['messages'][] =  t('Error adding file to the repo file !error', array('!error' => $results['message']));
         }
     }
 }
@@ -215,11 +270,12 @@ function github_behat_editor_behat_editor_after_save_alter(&$data) {
         $results = $git_actions->update($data);
         //@todo not sure the best way to send back data.
         if($results['error'] == 0) {
-            return $results;
+            drupal_set_message(t('File Added and Pushed to repo !message', array('!message' => $results['message'])));
+            //@todo push this message back to the screen using ajax
+            $data['messages'][] =  $results['message'];
         } else {
-            drupal_set_message('github_editor_create', t('Error processing file !error', array('!error' => $results['message'])));
-            $service_path = implode('/', $data['service_path']);
-            drupal_goto("admin/behat/edit/{$service_path}");
+            drupal_set_message(t('Error processing file !error', array('!error' => $results['message'])));
+            $data['messages'][] =  t('Error pushing file back to the repo file !error', array('!error' => $results['message']));
         }
     }
 }

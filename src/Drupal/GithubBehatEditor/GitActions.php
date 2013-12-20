@@ -67,7 +67,8 @@ class GitActions {
             return array('error' => 1, 'message' => $message);
         }
         $message = $this->git->getLog(1);
-        return array('error' => 0, 'message' => $message);
+        watchdog('github_behat_editor', t('Git push message !message'), array('!message' => implode("\n", $message)), WATCHDOG_NOTICE);
+        return array('error' => 0, 'message' => t('File added to git and committed.'));
     }
 
 
@@ -84,21 +85,27 @@ class GitActions {
         $this->full_path_to_file_folder = $this->data['absolute_path'];
         $this->git = Repository::open($this->full_path_to_repo_folder, $this->git_path);
         $this->git->add(array($this->full_path_to_file));
-        $this->git->commit("Commit via behat editor by $user->name", array($this->full_path_to_file), $author = null);
-        exec("cd $this->full_path_to_file_folder && git pull", $output, $return_var);
-        if($return_var == 1) {
-            $message = implode("\n", $output);
-            watchdog('github_behat_editor', t('During the git pull action there was this error !error'), array('!error' => $message), WATCHDOG_ERROR);
-            return array('error' => 1, 'message' => $message);
+        if($this->git->isDirty()) {
+            $this->git->commit("Commit via behat editor by $user->name", array($this->full_path_to_file), $author = null);
+            exec("cd $this->full_path_to_file_folder && git pull", $output, $return_var);
+            if($return_var == 1) {
+                $message = implode("\n", $output);
+                watchdog('github_behat_editor', t('During the git pull action there was this error !error'), array('!error' => $message), WATCHDOG_ERROR);
+                return array('error' => 1, 'message' => $message);
+            }
+            exec("cd $this->full_path_to_file_folder && git push", $output, $return_var);
+            if($return_var == 1) {
+                $message = implode("\n", $output);
+                watchdog('github_behat_editor', t('During the git push action there was an error !error'), array('!error' => $message), WATCHDOG_ERROR);
+                return array('error' => 1, 'message' => $message);
+            }
+            $message = $this->git->getLog(1);
+            watchdog('github_behat_editor', t('Git push message !message'), array('!message' => implode("\n", $message)), WATCHDOG_NOTICE);
+            //@todo offer modal for more feedback
+            return array('error' => 0, 'message' => t('File commited and pushed to repo. See logs for more info.'));
         }
-        exec("cd $this->full_path_to_file_folder && git push", $output, $return_var);
-        if($return_var == 1) {
-            $message = implode("\n", $output);
-            watchdog('github_behat_editor', t('During the git push action there was an error !error'), array('!error' => $message), WATCHDOG_ERROR);
-            return array('error' => 1, 'message' => $message);
-        }
-        $message = $this->git->getLog(1);
-        return array('error' => 0, 'message' => $message);
+        watchdog('github_behat_editor', t('No changes to the file'), array(), WATCHDOG_NOTICE);
+        return array('error' => 0, 'message' => 'No changes to the file so no git commit');
     }
 
     public function setCommitStatus(){
