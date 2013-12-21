@@ -95,10 +95,10 @@ function github_behat_editor_form_alter(&$form, &$form_state) {
          * Edit Form
          */
         if($is_github == 'behat_github' && $form['#id'] == 'behat-editor-edit-form') {
-            $edit_path = arg();
-            $edit_path[2] = 'edit';
-            $edit_path = implode('/', $edit_path);
-            unset($form['actions']['delete_test']);
+//            $edit_path = arg();
+//            $edit_path[2] = 'edit';
+//            $edit_path = implode('/', $edit_path);
+//            unset($form['actions']['delete_test']);
         }
 
         /**
@@ -134,7 +134,6 @@ function github_behat_editor_form_alter(&$form, &$form_state) {
             );
             $form['#attached']['js']['github_behat_editor_add'] = $path . '/js/github_behat_editor_add.js';
             $form['#attached']['css']['github_behat_editor_add'] = $path . '/css/github_behat_editor_app.css';
-
         }
 
 
@@ -218,6 +217,31 @@ function github_behat_editor_behat_editor_edit_alter(&$data) {
         $github_load->redirectFromGroupToUserRepo(array('data' => $data, 'mode' => 'edit', 'arg' => arg()));
     }
 }
+
+/**
+ * Alter the show hook_behat_editor_show()
+ */
+
+function github_behat_editor_behat_editor_after_delete_alter(&$data) {
+    watchdog('test_delete_alter', print_r($data, 1));
+
+    if($data['module'] == 'behat_github') {
+        watchdog('test_delete_alter_if', print_r('You are here', 1));
+
+        $git_actions = new GithubBehatEditor\GithubBehatEditorController();
+        $results = $git_actions->delete($data);
+        //@todo not sure the best way to send back data.
+        if($results['error'] == 0) {
+            drupal_set_message(t('File Delete and repo updated !message', array('!message' => $results['message'])));
+            //@todo push this message back to the screen using ajax
+            $data['messages'][] = $results['message'];
+        } else {
+            drupal_set_message(t('Error processing file !error', array('!error' => $results['message'])));
+            $data['messages'][] =  t('Error adding file to the repo file !error', array('!error' => $results['message']));
+        }
+    }
+}
+
 
 /**
  * Alter the show hook_behat_editor_show()
