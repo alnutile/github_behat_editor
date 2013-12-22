@@ -40,6 +40,65 @@ class GitActions {
 
     }
 
+
+    /**
+     *
+     */
+    public function delete($data){
+        global $user;
+        $this->data = $data;
+        $service_path_full_array = $this->data['service_path'];
+        //This next one will get us down to the repo folder
+        $service_path_full_trim_to_root_folder = array_slice($service_path_full_array, 0, 4);
+        $service_path_full_trim_to_root_folder_string = implode('/', $service_path_full_trim_to_root_folder);
+        $service_path_full_trim_to_root_folder_absolute = file_build_uri($service_path_full_trim_to_root_folder_string);
+        $this->full_path_to_repo_folder = drupal_realpath($service_path_full_trim_to_root_folder_absolute);
+        $this->full_path_to_file = $this->data['absolute_path_with_file'];
+        $this->full_path_to_file_folder = $this->data['absolute_path'];
+        $this->git = Repository::open($this->full_path_to_repo_folder, $this->git_path);
+        $this->git->removeFile($this->full_path_to_file, $commitMsg = "Commit via behat editor by $user->name", $recursive = false, $force = false, $author = null);
+        $results = $this->gitPull();
+        if($results['error'] == 1) {
+            return array('error' => 1, 'message' => $results['message']);
+        }
+        $results = $this->gitPush();
+        if($results['error'] == 1) {
+            return array('error' => 1, 'message' => $results['message']);
+        }
+        $message = $this->git->getLog(1);
+        watchdog('github_behat_editor', t('Git delete message !message'), array('!message' => implode("\n", $message)), WATCHDOG_NOTICE);
+        return array('error' => 0, 'message' => t('File deleted from git repo and committed.'));
+    }
+
+    protected function gitPull() {
+        exec("cd $this->full_path_to_file_folder && git pull", $output, $return_var);
+        $message = implode("\n", $output);
+        if($return_var == 1) {
+            watchdog('github_behat_editor', t('During the git pull action there was this error !error'), array('!error' => $message), WATCHDOG_ERROR);
+            return array('error' => 1, 'message' => $message);
+        } else {
+            return array('error' => 0, 'message' => $message);
+        }
+    }
+
+    protected function gitPush(){
+        exec("cd $this->full_path_to_file_folder && git push", $output, $return_var);
+        $message = implode("\n", $output);
+        if($return_var == 1) {
+            watchdog('github_behat_editor', t('During the git push action there was an error !error'), array('!error' => $message), WATCHDOG_ERROR);
+            return array('error' => 1, 'message' => $message);
+        } else {
+            return array('error' => 0, 'message' => $message);
+        }
+    }
+
+    /**
+     * @todo merge create and update code into a more generic
+     * method for both create and update to share
+     *
+     * @param $data
+     * @return array
+     */
     public function create($data){
         global $user;
         $this->data = $data;
@@ -85,6 +144,7 @@ class GitActions {
         $this->full_path_to_file_folder = $this->data['absolute_path'];
         $this->git = Repository::open($this->full_path_to_repo_folder, $this->git_path);
         $this->git->add(array($this->full_path_to_file));
+        watchdog('test_git_dirty', print_r($this->git->isDirty(), 1));
         if($this->git->isDirty()) {
             $this->git->commit("Commit via behat editor by $user->name", array($this->full_path_to_file), $author = null);
             exec("cd $this->full_path_to_file_folder && git pull", $output, $return_var);
@@ -127,10 +187,6 @@ class GitActions {
         $current = (isset($params['use_current_path']) && $params['use_current_path'] == TRUE) ? '.' : '';
         exec("cd {$params['destination']} && $this->git_path clone {$params['full_repo_path']} $current", $output, $return_val);
         return array('response' => $output, 'error' => $return_val);
-    }
-
-    public function gitPull(){
-
     }
 
     public function gitGetStatus($repo_absolute_path){

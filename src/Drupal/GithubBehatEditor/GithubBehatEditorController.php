@@ -133,6 +133,12 @@ class GithubBehatEditorController {
         return $results;
     }
 
+    public function delete($data = array()) {
+        $git_action = new GitActions();
+        $results = $git_action->delete($data);
+        return $results;
+    }
+
     public function getAllReposForUser($user) {
         $this->getUserRepos();
         $this->repos_by_repo_name = $this->user_and_group_repos;
@@ -158,8 +164,6 @@ class GithubBehatEditorController {
             $path_uri =  file_build_uri("/{$path}/");
             $absolute_path = drupal_realpath($path_uri);
             exec("cd $absolute_path && git pull", $output, $return_val);
-            watchdog('test_output', print_r($output, 1));
-            watchdog('test_return_val', print_r($return_val, 1));
         }
     }
 
@@ -192,6 +196,11 @@ class GithubBehatEditorController {
         return $repos_by_name;
     }
 
+    /**
+     * FileModal Class _buildArrayOfAvailableFilesInPublicFolders
+     * can replace this class
+     * if I made an interface for these different file types
+     */
     protected function getRepoFiles() {
         $filename = null;
         $file_data = array();
@@ -203,6 +212,7 @@ class GithubBehatEditorController {
             $root_path = file_build_uri("$service_path");
             $full_root_path = drupal_realpath($root_path);
             $files = file_scan_directory($full_root_path, '/.*\.feature/', $options = array('recurse' => TRUE), $depth = 0);
+            $file_data = array();
             foreach($files as $file_key => $file_value) {
                 $array_key =$file_value->uri;
                 $filename = $file_value->filename;
@@ -212,7 +222,7 @@ class GithubBehatEditorController {
                     'filename' => $filename,
                     'module' => 'behat_github',
                     'parse_type' => 'file',
-                    'service_path' => $full_service_path_array /* @todo this can be a subfolder issue */
+                    'service_path' => $full_service_path_array
                 );
                 $file = new BehatEditor\FileModel($params);
                 $file_data[$array_key] = $file->getFile();
