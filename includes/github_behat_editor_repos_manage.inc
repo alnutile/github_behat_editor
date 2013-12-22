@@ -17,7 +17,7 @@ use TQ\Git\StreamWrapper\StreamWrapper,
  *   add update delete
  */
 function github_behat_editor_repos_manage($type, $action, $id) {
-    $build['intro'] = t("Manage Repoos");
+    $build['intro'] = t("Manage Repos");
 
     $build['repos'] = drupal_get_form('github_behat_editor_repos_form', $type, $action, $id);
 

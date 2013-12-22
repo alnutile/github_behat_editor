@@ -13,6 +13,7 @@ class GithubBehatEditorController {
     protected $type = '';
     protected $repo_name = '';
     protected $action = '';
+    protected $relative_path;
     protected $module = '';
     protected $gid = 0;
     protected $filename = '';
@@ -149,11 +150,74 @@ class GithubBehatEditorController {
     }
 
     /**
+     * Check if folder exists
+     * if not make folder and do a clone
+     *
+     */
+    public function checkIfRepoFolderExists(array $repos){
+        foreach($repos as $key => $value) {
+            $path = $this->repoBasePath($value);
+            $repo_root_exists = file_exists($path);
+            $account_and_reponame = $value['repo_account'] . '/' . $value['repo_name'];
+            /**
+             * Need to see if the folder exists if not make it and then clone
+             */
+            if(!$repo_root_exists) {
+                drupal_mkdir($path, $mode = NULL, $recursive = TRUE);
+            }
+
+            $repo_actions = new RepoModel();
+            $repo_actions->cloneRepo(array($account_and_reponame), array('uid' => $value['uid'], 'gid' => $value['gid']));
+        }
+    }
+
+
+    /**
+     * Setup path
+     * from behat_github/users or groups/ID/repo_name
+     * and get absolute path
+     *
+     * @param $value array
+     *   repo_name
+     *   gid
+     *   uid
+     *   folder
+     */
+    protected function repoBasePath($value) {
+        $this->repoRelativePath($value);
+        if(($value['gid'] == 0)) {
+            $type = 'users';
+        } else {
+            $type = 'groups';
+        }
+        $path_uri =  file_build_uri("/behat_github/");
+        $path_uri = drupal_realpath($path_uri);
+        $path_full = $path_uri . '/' . $type . '/' . $this->relative_path;
+        return $path_full;
+    }
+
+    /**
+     * Setup the folder path starting at id
+     * @param $value
+     * @return string
+     */
+    protected function repoRelativePath($value) {
+        if(($value['gid'] == 0)) {
+            $id = $value['uid'];
+        } else {
+            $id = $value['gid'];
+        }
+        $repo_name = $value['repo_name'];
+        $this->relative_path = "$id/$repo_name";
+        return $this->relative_path;
+    }
+
+    /**
      * @params
      *  array of user repos from Repomanager::getUserRepos
      *
      */
-    protected function updateAllRepos($repos, $type = 'users') {
+    public function updateAllRepos($repos, $type = 'users') {
         //Repos start in behat_github
         //from there depending on the $type is where they sit
         foreach($repos as $key => $value){
@@ -167,12 +231,15 @@ class GithubBehatEditorController {
         }
     }
 
-    protected  function getUserRepos(){
+    public function getUserRepos($keyed_by_name = TRUE){
         $repos = $this->repo_manager->getUserRepos($this->user->uid);
         $this->repos = $repos['results'];
-        //@todo do a pull before this so we have the latest files
-        $this->keyReposByName();
-        $this->user_and_group_repos = $this->keyReposByName();
+        if($keyed_by_name) {
+            $this->user_and_group_repos = $this->keyReposByName();
+        } else {
+            $this->user_and_group_repos = $this->repos;
+        }
+        return $this->user_and_group_repos;
     }
 
     protected  function getUsersGroupRepo(){
