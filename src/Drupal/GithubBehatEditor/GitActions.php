@@ -144,6 +144,7 @@ class GitActions {
         $this->full_path_to_file_folder = $this->data['absolute_path'];
         $this->git = Repository::open($this->full_path_to_repo_folder, $this->git_path);
         $this->git->add(array($this->full_path_to_file));
+        watchdog('test_git_dirty', print_r($this->git->isDirty(), 1));
         if($this->git->isDirty()) {
             $this->git->commit("Commit via behat editor by $user->name", array($this->full_path_to_file), $author = null);
             exec("cd $this->full_path_to_file_folder && git pull", $output, $return_var);
