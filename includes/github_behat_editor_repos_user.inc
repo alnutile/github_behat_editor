@@ -137,7 +137,7 @@ function batch_update_user_repo($repo_array, $message, $total, $current, &$conte
     $context['sandbox']['progress']= $current;
     $context['results'][] = $repo_array['repo_name'];
     $context['message'] = t("Repo updated @name", array('@name' => $repo_array['repo_name']));
-    
+
 }
 
 

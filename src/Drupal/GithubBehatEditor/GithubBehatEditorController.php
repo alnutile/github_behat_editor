@@ -242,10 +242,15 @@ class GithubBehatEditorController {
         return $this->user_and_group_repos;
     }
 
-    protected  function getUsersGroupRepo(){
+    public function getUsersGroupRepo($keyed_by_name = TRUE){
         $repos = $this->repo_manager->getGroupRepos($this->user->uid);
         $this->repos = $repos['results'];
-        $this->user_and_group_repos = $this->keyReposByName();
+        if($keyed_by_name) {
+            $this->user_and_group_repos = $this->keyReposByName();
+        } else {
+            $this->user_and_group_repos = $this->repos;
+        }
+        return $this->user_and_group_repos;
     }
 
     protected function keyReposByName() {
