@@ -114,6 +114,7 @@ class GitActions {
         $this->git->add(array($this->full_path_to_file));
         $this->git->commit("Commit via behat editor by $user->name", array($this->full_path_to_file), $author = null);
         exec("cd $this->full_path_to_file_folder && git pull", $output, $return_var);
+        //@todo work gitPull and gitPush into here
         if($return_var == 1) {
             $message = implode("\n", $output);
             watchdog('github_behat_editor', t('During the git pull action there was this error !error'), array('!error' => $message), WATCHDOG_ERROR);
@@ -144,7 +145,7 @@ class GitActions {
         $this->full_path_to_file_folder = $this->data['absolute_path'];
         $this->git = Repository::open($this->full_path_to_repo_folder, $this->git_path);
         $this->git->add(array($this->full_path_to_file));
-        watchdog('test_git_dirty', print_r($this->git->isDirty(), 1));
+        //@todo work gitPull and gitPush into here
         if($this->git->isDirty()) {
             $this->git->commit("Commit via behat editor by $user->name", array($this->full_path_to_file), $author = null);
             exec("cd $this->full_path_to_file_folder && git pull", $output, $return_var);

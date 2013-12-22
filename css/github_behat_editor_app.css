@@ -9,3 +9,8 @@ button#edit-github-add {
    height: 39px;
    min-width: 100%;
 }
+
+button#update-repos-users {
+    width: 200px;
+    margin-left: 5px;
+}
