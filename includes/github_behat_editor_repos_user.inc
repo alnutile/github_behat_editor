@@ -131,7 +131,8 @@ function batch_update_user_repo($repo_array, $message, $total, $current, &$conte
 
     //Take repo_array and run an update
     $repo_action = new GithubBehatEditor\GithubBehatEditorController();
-    $repo_action->checkIfRepoFolderExists(array($repo_array));
+    global $user;
+    $repo_action->checkIfRepoFolderExists(array($repo_array), $uid = $user->uid);
 
     //Once that is done return
     $context['sandbox']['progress']= $current;

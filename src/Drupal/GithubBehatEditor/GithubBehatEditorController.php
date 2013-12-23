@@ -152,9 +152,11 @@ class GithubBehatEditorController {
     /**
      * Check if folder exists
      * if not make folder and do a clone
+     * @todo this method is doing too much too
      *
      */
-    public function checkIfRepoFolderExists(array $repos){
+    public function checkIfRepoFolderExists(array $repos, $uid = FALSE){
+
         foreach($repos as $key => $value) {
             $path = $this->repoBasePath($value);
             $repo_root_exists = file_exists($path);
@@ -166,8 +168,12 @@ class GithubBehatEditorController {
                 drupal_mkdir($path, $mode = NULL, $recursive = TRUE);
             }
 
+            if(!isset($uid)) {
+                $uid = $value['uid'];
+            }
+
             $repo_actions = new RepoModel();
-            $repo_actions->cloneRepo(array($account_and_reponame), array('uid' => $value['uid'], 'gid' => $value['gid']));
+            $repo_actions->cloneRepo(array($account_and_reponame), array('uid' => $uid, 'gid' => $value['gid']));
         }
     }
 
@@ -251,6 +257,11 @@ class GithubBehatEditorController {
             $this->user_and_group_repos = $this->repos;
         }
         return $this->user_and_group_repos;
+    }
+
+    public function getUsersGroupRepoByGid(array $gid){
+        $repos = $this->repo_manager->getGroupReposByGid($gid);
+        return $repos['results'];
     }
 
     protected function keyReposByName() {

@@ -102,7 +102,7 @@ function _github_behat_editor_batch_groups_repos_update(){
     global $user;
     $user_repos = new GithubBehatEditor\GithubBehatEditorController($user);
     $user_repos = $user_repos->getUsersGroupRepo($keyed_by_name = FALSE);
-    watchdog('test_user_repos', print_r($user_repos, 1));
+
 
     $total = count($user_repos);
     $count = 1;
@@ -139,10 +139,10 @@ function batch_update_group_repo($repo_array, $message, $total, $current, &$cont
     }
 
     $context['sandbox'];
-
+    global $user;
     //Take repo_array and run an update
     $repo_action = new GithubBehatEditor\GithubBehatEditorController();
-    $repo_action->checkIfRepoFolderExists(array($repo_array));
+    $repo_action->checkIfRepoFolderExists(array($repo_array), $uid = $user->uid);
 
     //Once that is done return
     $context['sandbox']['progress']= $current;

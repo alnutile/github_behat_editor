@@ -91,6 +91,13 @@ class RepoModel {
         return array('results' => $records, 'error' => $results['error']);
     }
 
+    public function getGroupReposByGid(array $gids){
+        $queryRepos = new GithubRepoQueries();
+        $results = $queryRepos->selectAllByGid($gids);
+        $records = $results['results'];
+        return array('results' => $records, 'error' => $results['error']);
+    }
+
     public function getGroupRepo($params){
         $this->gid = $params['gid'];
         $this->repo_name = $params['repo_name'];
@@ -155,11 +162,11 @@ class RepoModel {
             if(isset($params['gid'])) {
                 $fields->gid = $params['gid'];
             }
-            $repo_account = implode('/', $split_value[4]); //grab the account from the full name
+            $repo_account = explode('/', $split_value[4]); //grab the account from the full name
             $fields->github_id = $split_value[0];
             $fields->repo_url = $split_value[1];
             $fields->repo_name = $split_value[2];
-            $fields->repo_account = $repo_account;
+            $fields->repo_account = $repo_account[0];
             $fields->uid = $split_value[3];
             $fields->folder = $params['folder'];
             $results = $query->insertRepo((array) $fields);

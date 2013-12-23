@@ -1,0 +1,209 @@
+Running Tests...
+   * @javascript * @behat * @behat_full_test * @api  
+---- Feature:  Add Page ---- 
+::: Background:  Log In :::
+Given  I am on " /user/logout "
+  Then  I am on " /user/login "
+  And  I fill in " Username " with " admin "
+  And  I fill in " Password " with " welcome "
+  And  I press " Log in "
+  And  I wait for " 3 " seconds
+  Given  I run drush " cache-clear drush "
+  Given  I run drush " gbs "
+   * @test_modules * @view * @thisone  
+::: Scenario:  User views a module file :::
+Given  I am on " /admin/behat/view/behat_editor/behat_features/wikipedia.feature "
+  Then  I should see " Scenario: WikiPedia "
+  And  I should not see " Delete Test "
+  And  I should not see " Edit Test "
+   * @test_modules * @view  
+::: Scenario:  User views a module file and runs a test :::
+Given  I am on " /admin/behat/view/behat_editor/behat_features/wikipedia.feature "
+  And  I wait
+  And  I click " Run Test "
+  And  I wait
+  And  I wait
+  Then  I should see " File wikipedia.feature tested. "
+  Then  I should see " Test successful "
+  Then  I should see " Results "
+  Then  I should see " was not found anywhere "
+   * @test_behat_tests * @view  
+::: Scenario:  User views a file in behat_tests folder :::
+Given  I am on " /admin/behat/view/behat_tests/wikipedia.feature "
+  Then  I should see " Scenario: WikiPedia "
+   * @test_behat_tests * @view  
+::: Scenario:  User views a file in behat_tests folder and runs a test :::
+Given  I am on " /admin/behat/view/behat_tests/wikipedia.feature "
+  And  I wait
+  And  I click " Run Test "
+  And  I wait
+  And  I wait
+  Then  I should see " File wikipedia.feature tested. "
+  Then  I should see " Test successful "
+  Then  I should see " Results "
+  Then  I should see " was not found anywhere "   The text "was not found anywhere" was not found anywhere in the text of the current page.
+  * @test_behat_github * @view  
+::: Scenario:  User views a file in behat_github folder :::
+Given  I am on " /admin/behat/view/behat_github/groups/3/bbbbb_test/tests/wikipedia.feature "
+  Then  I should see " Scenario: WikiPedia "
+  And  I should see " Edit Test "
+   * @test_behat_github * @view  
+::: Scenario:  User views a file in behat_github folder and runs a test :::
+Given  I am on " /admin/behat/view/behat_github/groups/3/bbbbb_test/tests/wikipedia.feature "
+  And  I wait
+  And  I click " Run Test "
+  And  I wait
+  And  I wait
+  And  I wait
+  And  I wait
+  Then  I should see " File wikipedia.feature tested. "
+  Then  I should see " Test successful "
+  Then  I should see " Results "
+   * @test_behat_tests * @edit  
+::: Scenario:  User edits a file in behat_tests folder :::
+Given  I am on " /admin/behat/edit/behat_tests/wikipedia.feature "
+  Then  I should see " Scenario: WikiPedia "
+   * @test_behat_tests * @edit  
+::: Scenario:  User edits a file in behat_tests folder and runs a test :::
+Given  I am on " /admin/behat/edit/behat_tests/wikipedia.feature "
+  And  I wait
+  Then  I fill in " see_not_see_some_text " with " Test4 "
+  And  I press " see_not_see "
+  And  I click " Run Test "
+  And  I wait
+  And  I wait
+  And  I wait
+  Then  I should see " Test successful "
+  Then  I should see " Results "
+  Then  I should see " was not found anywhere "   The text "was not found anywhere" was not found anywhere in the text of the current page.
+  * @test_behat_github * @edit  
+::: Scenario:  Make sure the user is redirected from groups to users github repo :::
+Given  I am on " /admin/behat/edit/behat_github/groups/3/bbbbb_test/tests/wikipedia.feature "
+  And  I wait
+  And  I wait
+  Then  the url should match "/admin/behat/edit/behat_github/users/1/bbbbb_test/tests/wikipedia.feature"
+   Then  I should see " Editing: wikipedia.feature "
+   * @test_behat_github * @edit  
+::: Scenario:  Make sure the user sees a message file is missing :::
+Given  I am on " /admin/behat/edit/behat_github/groups/3/test_fake_repo_name/test/wikipedia.feature "
+  And  I wait
+  And  I wait
+  Then  I should see " The file does not exist "
+  Then  I should not see " Scenario: This would be this "
+   * @test_behat_github * @edit  
+::: Scenario:  User Edits a behat_github_repo and runs a test :::
+Given  I am on " /admin/behat/edit/behat_github/users/1/bbbbb_test/tests/wikipedia.feature "
+  And  I wait
+  Then  I fill in " see_not_see_some_text " with " Test4 "
+  And  I should not see " You and your group do not have access to this repo "
+  And  I press " see_not_see "
+  And  I click " Run Test "
+  And  I wait
+  And  I wait
+  And  I wait
+  And  I wait
+  Then  I should see " Test successful "
+  Then  I should see " Results "
+  Then  I should see " was not found anywhere "   The text "was not found anywhere" was not found anywhere in the text of the current page.
+ Then  I should see " File wikipedia.feature tested "
+  And  I follow " wikipedia.feature "
+  And  I wait
+  Then  I should see " Test4 "
+  Then  I switch back to original window
+  And  I wait
+  And  I should see " Test successful! "
+  And  I press the element located at " ul.scenario.sortable.ui-sortable li:last-child i.remove "
+  And  I click " Run Test "
+  And  I wait
+  And  I wait
+  And  I wait
+  And  I wait
+  Then  I follow " wikipedia.feature "
+  And  I wait
+  Then  I should not see " Test4 "
+   * @test_behat_tests * @edit * @save  
+::: Scenario:  User Saves a Behat Edit File :::
+Given  I am on " /admin/behat/edit/behat_tests/wikipedia.feature "
+  And  I wait
+  Then  I fill in " see_not_see_some_text " with " Test4 "
+  And  I press " see_not_see "
+  And  I click " Save Test "
+  And  I wait
+  And  I wait
+  Then  I should see " File created click here to download "
+  And  I follow " click here "
+  And  I wait
+  Then  I should see " Test4 "
+  Then  I switch back to original window
+  And  I wait
+  And  I should see " File created click here to download "
+  And  I click the element located at " ul.scenario.sortable.ui-sortable li:last-child i.remove "
+  And  I click " Run Test "
+  And  I wait
+  And  I wait
+  And  I wait
+  Then  I follow " click here "
+  And  I wait
+  Then  I should not see " Test4 "
+   * @test_behat_github * @save * @edit  
+::: Scenario:  User Saves a Github Behat Edit File :::
+Given  I am on " /admin/behat/edit/behat_github/users/1/bbbbb_test/tests/wikipedia.feature "
+  And  I wait
+  Then  I fill in " see_not_see_some_text " with " Test4 "
+  And  I press " see_not_see "
+  And  I click " Save Test "
+  And  I wait
+  And  I wait
+  And  I wait
+  Then  I should see " File created click here to download "   The text "File created click here to download" was not found anywhere in the text of the current page.
+ And  I follow " click here "
+  And  I wait
+  Then  I should see " Test4 "
+  Then  I switch back to original window
+  And  I wait
+  And  I should see " File created click here to download "
+  And  I click the element located at " ul.scenario.sortable.ui-sortable li:last-child i.remove "
+  And  I click " Run Test "
+  And  I wait
+  And  I wait
+  And  I wait
+  Then  I follow " click here "
+  And  I wait
+  Then  I should not see " Test4 "
+   * @test_add * @  
+::: Scenario:  User adds a test :::
+Given  I am on " /admin/behat/add "
+  And  I wait
+  And  I click the element located at " a.example-test-load "
+  And  I wait
+  And  I wait
+  And  I wait
+  And  I wait
+  And  I click " Run Test "
+  And  I wait
+  And  I wait
+  And  I wait
+  Then  I should see " Test successful! "
+  Then  I switch to popup by clicking link " test-file "
+  Then  I should see " Example Test for WikiPedia "
+  Then  I switch back to original window
+  Then  I should see " Your results will show here "
+   * @test_add  
+::: Scenario:  User saves a new test :::
+Given  I am on " /admin/behat/add "
+  And  I wait
+  And  I wait
+  And  I wait
+  And  I wait
+  And  I click the element located at " a.example-test-load "
+  And  I wait
+  And  I follow " edit-add-test "
+  And  I wait
+  Then  I should see " will be added and "
+  And  I press " Continue "
+  And  I wait
+  And  I wait
+  Then  I should see " You are now in edit mode "
+  And  I should see " Example Test for WikiPedia "
+
+ 15 scenarios ( 11 passed , 4 failed )  285 steps ( 251 passed , 30 skipped , 4 failed )  5m55.908s   

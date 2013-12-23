@@ -121,7 +121,10 @@ function github_behat_editor_form_alter(&$form, &$form_state) {
                 ($value['gid'] == 0) ? $type = 'users' : $type = 'groups';
                 ($value['gid'] == 0) ? $id = $value['uid'] : $id = $value['gid'];
                 //For right now force into user folder they really should all be set as needed.
-                $links[] = l($value['repo_name'], "behat_github/users/{$value['uid']}/{$value['repo_name']}/{$value['folder']}");
+                $links[] = array(
+                                    'data' =>l($value['repo_name'], "behat_github/users/{$value['uid']}/{$value['repo_name']}/{$value['folder']}", array('attributes' => array('id' => $value['repo_name']))),
+                                    'class' => array($value['repo_name'])
+                                );
             }
 
             $list = theme('item_list', array('items' => $links, 'attributes' => array('class' => array('dropdown-menu'), 'role' => 'menu')));
@@ -305,8 +308,6 @@ function github_behat_editor_behat_editor_after_save_alter(&$data) {
 }
 
 
-
-
 /**
  * Alter the show hook_behat_editor_index()
  */
@@ -324,23 +325,16 @@ function github_behat_editor_behat_editor_index_alter(&$data) {
 
 }
 
-
-
-
-function github_behat_editor_behat_editor_files_found_alter(&$data, $context1 = array()) {
-//    composer_manager_register_autoloader();
-//    global $user;
-//    $files = new GithubBehatEditor\GithubDownloadedFiles();
-//    //Group Related Files
-//    $group_files = $files->getGroupFilesArray();
-//    $data = array_merge($data, $group_files);
-}
-
-function github_behat_editor_behat_editor_build_path_alter(&$data, $params = array()) {
-    global $user;
-    //@todo no longer needed now that I cleaned up the path issue
-    if(arg(3) == 'behat_github' || (isset($params) && $params['module'] == 'behat_github')) {
-//        $results = new GithubBehatEditor\GithubBehatEditorController($params);
-//        $data = $results->getData();
-    }
+function  github_behat_editor_og_membership_insert(OgMembership $og_membership) {
+    drupal_set_message(t('You can update your github repositories for this group here !link',
+        array('!link' => l('Admin Repos', 'admin/behat/github_settings/groups'))));
+        dpm($og_membership);
+    composer_manager_register_autoloader();
+    $gid = $og_membership->gid;
+    //Get all repos for group and update user as needed
+    $groups = new GithubBehatEditor\GithubBehatEditorController();
+    $group_repos = $groups->getUsersGroupRepoByGid(array($gid));
+    dpm($group_repos);
+    $groups->checkIfRepoFolderExists($group_repos, arg(1));
+    drupal_set_message("Updated Group repos for user");
 }
