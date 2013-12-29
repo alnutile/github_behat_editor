@@ -212,6 +212,7 @@ class RepoModel {
             }
 
             $git = new GitActions();
+            watchdog('test_group_path', print_r($this->public_absolute_path, 1));
             if($git->checkIfGitFolder($this->public_absolute_path)) {
                 $clone = $git->gitClone(array('destination' => $this->public_absolute_path, 'full_repo_path' => $full_repo_path, 'use_current_path' => TRUE));
                 if($clone['error'] == 0) {
@@ -250,6 +251,8 @@ class RepoModel {
 
             $git = new GitActions();
             if($git->checkIfGitFolder($this->public_absolute_path)) {
+                watchdog('test_repo_path', print_r($full_repo_path, 1));
+                watchdog('test_public_absolute', print_r($this->public_absolute_path, 1));
                 $clone = $git->gitClone(array('destination' => $this->public_absolute_path, 'full_repo_path' => $full_repo_path, 'use_current_path' => TRUE));
                 if($clone['error'] == 0) {
                     $message = t("There is not a git folder @folder so a new clone was made.", array('@folder' => $this->public_absolute_path));

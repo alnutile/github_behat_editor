@@ -71,6 +71,7 @@ class GithubBehatEditorController {
         $this->action = $params['mode'];
         $this->service_path = $path;
         if($group_or_user == 'groups') {
+            $this->gid = $params['arg'][5];
             $this->checkGroupRequest();
             $this->checkGroupRepoAccess();
         }
@@ -85,7 +86,7 @@ class GithubBehatEditorController {
         if(!in_array($this->gid, $this->users_groups)){
             //@todo better exit plan here
             drupal_set_message('You are not in this group');
-            //drupal_goto('admin/behat/index');
+            drupal_goto('admin/behat/index');
         }
     }
 
@@ -117,6 +118,8 @@ class GithubBehatEditorController {
         $this->repos_by_repo_name = array_merge($this->user_and_group_repos, $this->repos_by_repo_name);
         //now parse the directories for these files
         $this->getRepoFiles();
+        watchdog('test_repos_found', print_r($this->files_array_alter, 1));
+
         $this->files_array = array_merge($this->files_array, $this->files_array_alter);
         return $this->files_array;
     }
@@ -249,7 +252,7 @@ class GithubBehatEditorController {
     }
 
     public function getUsersGroupRepo($keyed_by_name = TRUE){
-        $repos = $this->repo_manager->getGroupRepos($this->user->uid);
+        $repos = $this->repo_manager->getGroupRepos(array('uid' => $this->user->uid));
         $this->repos = $repos['results'];
         if($keyed_by_name) {
             $this->user_and_group_repos = $this->keyReposByName();

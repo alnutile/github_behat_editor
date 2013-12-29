@@ -70,7 +70,6 @@ class GithubRepoQueries {
     }
 
     public function insertRepo($params) {
-        watchdog('test_params_before_insert', print_r($params, 1));
         $insert = db_insert('github_behat_editor_repos')->fields($params)->execute();
         return $insert;
     }

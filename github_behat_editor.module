@@ -320,10 +320,16 @@ function github_behat_editor_behat_editor_index_alter(&$data) {
          *
          * If user has version of repo file it should win out
          */
-        $github_load = new GithubBehatEditor\GithubBehatEditorController();
-        $data = $github_load->index($data);
-
+        //$github_load = new GithubBehatEditor\GithubBehatEditorController();
+        //$data = $github_load->index($data);
 }
+
+function github_behat_editor_behat_editor_files_found_alter(&$data) {
+    $github_load = new GithubBehatEditor\GithubBehatEditorController();
+    $data = $github_load->index($data);
+    watchdog('test_files_found_alter', print_r($data, 1));
+}
+
 
 function  github_behat_editor_og_membership_insert(OgMembership $og_membership) {
     drupal_set_message(t('You can update your github repositories for this group here !link',
