@@ -311,23 +311,19 @@ function github_behat_editor_behat_editor_after_save_alter(&$data) {
 /**
  * Alter the show hook_behat_editor_index()
  */
-
 function github_behat_editor_behat_editor_index_alter(&$data) {
-        /**
-         * 1. Get all the repos for the user
-         * 2. Get all the repos for the group
-         * 3. format them for the table output
-         *
-         * If user has version of repo file it should win out
-         */
+        //@note I moved this to the github_behat_editor_behat_editor_files_found_alter
+        //@todo clean up if this really seems better.
         //$github_load = new GithubBehatEditor\GithubBehatEditorController();
         //$data = $github_load->index($data);
 }
 
-function github_behat_editor_behat_editor_files_found_alter(&$data) {
-    $github_load = new GithubBehatEditor\GithubBehatEditorController();
-    $data = $github_load->index($data);
-    watchdog('test_files_found_alter', print_r($data, 1));
+function github_behat_editor_behat_editor_files_found_alter(&$data, $context) {
+    if($context == 'public') {
+        $github_load = new GithubBehatEditor\GithubBehatEditorController();
+        $data = $github_load->index($data);
+        watchdog('github_behat_editor', 'Ran files found all alter', array(), WATCHDOG_NOTICE);
+    }
 }
 
 
