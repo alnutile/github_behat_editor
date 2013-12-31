@@ -168,6 +168,7 @@ class GithubBehatEditorController {
              */
             if(!$repo_root_exists) {
                 drupal_mkdir($path, $mode = NULL, $recursive = TRUE);
+                drupal_chmod($path, $mode = 0775);
             }
 
             if(!isset($uid)) {
