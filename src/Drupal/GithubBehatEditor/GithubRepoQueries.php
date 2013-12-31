@@ -8,6 +8,10 @@
 
 namespace Drupal\GithubBehatEditor;
 
+/**
+ * @todo move all of this into repo model
+ * no reason to have 2
+ */
 
 class GithubRepoQueries {
 
@@ -35,7 +39,6 @@ class GithubRepoQueries {
     }
 
     public function selectAllByGid(array $gids){
-        (!empty($uid)) ? $this->uid = $uid : null ;
         $query = db_select('github_behat_editor_repos', 'r');
         $query->fields('r');
         $query->condition('r.gid', $gids, 'IN');

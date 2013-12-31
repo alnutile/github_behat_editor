@@ -76,6 +76,127 @@ function github_behat_editor_menu() {
     return $items;
 }
 
+function github_behat_editor_form_alter(&$form, &$form_state) {
+    $forms = array('behat-editor-edit-form', 'behat-editor-add-form', 'behat-editor-view-form');
+    global $user;
+    if(in_array($form['#id'], $forms)) {
+        $is_github = arg(3);
+        /**
+         * View Form
+         */
+        if($is_github == 'behat_github' && user_access("behat edit test") && $form['#id'] == 'behat-editor-view-form') {
+            $edit_path = arg();
+            $edit_path[2] = 'edit';
+            $edit_path = implode('/', $edit_path);
+            $form['actions']['edit_test'] = github_edit_test_array($edit_path);
+        }
+
+        /**
+         * Edit Form
+         */
+        if($is_github == 'behat_github' && $form['#id'] == 'behat-editor-edit-form') {
+//            $edit_path = arg();
+//            $edit_path[2] = 'edit';
+//            $edit_path = implode('/', $edit_path);
+//            unset($form['actions']['delete_test']);
+        }
+
+        /**
+         * Add Button
+         *
+         */
+
+        if($form['#id'] == 'behat-editor-add-form') {
+            global $user;
+            $github_from = new GithubBehatEditor\GithubBehatEditorController();
+            $repos = $github_from->getallreposforuser($user);
+            $links = array();
+            $path = drupal_get_path('module', 'github_behat_editor');
+            foreach($repos as $key => $value){
+                $data['data-gid'] = $value['gid'];
+                $data['data-uid'] = $value['uid'];
+                $data['data-repo-name'] = $value['repo_name'];
+                $data['data-folder'] = $value['folder'];
+                $data['data-module'] = $value['repo_name'];
+                ($value['gid'] == 0) ? $type = 'users' : $type = 'groups';
+                ($value['gid'] == 0) ? $id = $value['uid'] : $id = $value['gid'];
+                //For right now force into user folder they really should all be set as needed.
+                $links[] = array(
+                                    'data' =>l($value['repo_name'], "behat_github/users/{$value['uid']}/{$value['repo_name']}/{$value['folder']}", array('attributes' => array('id' => $value['repo_name']))),
+                                    'class' => array($value['repo_name'])
+                                );
+            }
+
+            $list = theme('item_list', array('items' => $links, 'attributes' => array('class' => array('dropdown-menu'), 'role' => 'menu')));
+            $form['actions']['github_add'] = array(
+                '#type' => "button",
+                '#value' => t('Add to Repo<span class="caret"></span>'),
+                '#attributes' => array('type' => 'button', 'class' => array('btn', 'btn-danger', 'dropdown-toggle'), 'data-toggle' => 'dropdown'),
+                '#prefix' => '<div class="btn-group gitrepo-choose">',
+                '#suffix' => $list . '</div>'
+            );
+            $form['#attached']['js']['github_behat_editor_add'] = $path . '/js/github_behat_editor_add.js';
+            $form['#attached']['css']['github_behat_editor_add'] = $path . '/css/github_behat_editor_app.css';
+        }
+
+
+
+        if($form['#id'] == 'behat-editor-view-form') {
+            global $user;
+            $github_from = new GithubBehatEditor\GithubBehatEditorController();
+            $repos = $github_from->getallreposforuser($user);
+            $links = array();
+            $path = drupal_get_path('module', 'github_behat_editor');
+            foreach($repos as $key => $value){
+                $data['data-gid'] = $value['gid'];
+                $data['data-uid'] = $value['uid'];
+                $data['data-repo-name'] = $value['repo_name'];
+                $data['data-folder'] = $value['folder'];
+                $data['data-module'] = $value['repo_name'];
+                ($value['gid'] == 0) ? $type = 'users' : $type = 'groups';
+                ($value['gid'] == 0) ? $id = $value['uid'] : $id = $value['gid'];
+                //For right now force into user folder they really should all be set as needed.
+                $links[] = l($value['repo_name'], "behat_github/users/{$value['uid']}/{$value['repo_name']}/{$value['folder']}");
+            }
+
+            $list = theme('item_list', array('items' => $links, 'attributes' => array('class' => array('dropdown-menu'), 'role' => 'menu')));
+            $form['actions']['github_add'] = array(
+                '#type' => "button",
+                '#value' => t('Clone to Repo<span class="caret"></span>'),
+                '#attributes' => array('type' => 'button', 'class' => array('btn', 'btn-danger', 'dropdown-toggle'), 'data-toggle' => 'dropdown'),
+                '#prefix' => '<div class="btn-group gitrepo-choose">',
+                '#suffix' => $list . '</div>'
+            );
+            $form['#attached']['js']['github_behat_editor_add'] = $path . '/js/github_behat_editor_clone.js';
+            $form['#attached']['css']['github_behat_editor_add'] = $path . '/css/github_behat_editor_app.css';
+
+        }
+
+        /**
+         * Clone to Button
+         *
+         */
+        if($is_github == 'behat_github' && ( $form['#id'] == 'behat-editor-view-form' || $form['#id'] == 'behat-editor-edit-form') ) {
+            $github_from = new GithubBehatEditor\GithubBehatEditorController();
+        }
+    }
+}
+
+function github_edit_test_array($path) {
+    if(user_access("behat edit test") ) {
+        return array(
+            '#type' => 'link',
+            '#name' => 'edit_test',
+            '#title' => t('Edit Test'),
+            '#href' => "$path",
+            '#attributes' => array('class' => array('btn', 'btn-info', 'edit')),
+        );
+    } else {
+        return array();
+    }
+
+}
+
 /**
  * Will be needed if github is down and commit is needed
  */
@@ -83,140 +204,138 @@ function github_behat_editor_cron() {
 
 }
 
-function github_behat_editor_behat_editor_files_found_alter(&$data, $context1 = array()) {
-    composer_manager_register_autoloader();
-    global $user;
-    $files = new GithubBehatEditor\GithubDownloadedFiles();
-    //Group Related Files
-    $group_files = $files->getGroupFilesArray();
-    $data = array_merge($data, $group_files);
+/**
+ * Alter the show hook_behat_editor_show()
+ */
 
-    //Append Array of files
-    //key => behat_github
-    //first get group files for this user
-    //  for each users groups parse the folders subfolder (from the db)
-    //  the create a file object as needed.
-    //then get user files to append collection or overwrite as needed
+function github_behat_editor_behat_editor_edit_alter(&$data) {
+    if($data['module'] == 'behat_github') {
+        /**
+         * 1. Make sure if the urls is groups we switch to the users path
+         * 2. Check if the user is in the group
+         * 3. Check if the group or user even has access to this repo
+         */
+        $github_load = new GithubBehatEditor\GithubBehatEditorController();
+        $github_load->checkAccess(array('data' => $data, 'mode' => 'edit', 'arg' => arg()));
+        $github_load->redirectFromGroupToUserRepo(array('data' => $data, 'mode' => 'edit', 'arg' => arg()));
+    }
 }
 
-function github_behat_editor_behat_editor_build_path_alter(&$data, $params = array()) {
-    global $user;
-    $module = '';
-    $filename = '';
-    $action = '';
-    $gid = '';
-    $type = '';
-    $repo_name = '';
-    $service_path = array();
-    $uid = $user->uid;
+/**
+ * Alter the show hook_behat_editor_show()
+ */
 
-    //@todo clean the below up so it is less messy
-    //  make an GitHub Permission class to deal with the before access methods
-    watchdog('test_arg_104', print_r(arg(), 1));
-    watchdog('test_params_106', print_r($params, 1));
+function github_behat_editor_behat_editor_after_delete_alter(&$data) {
+    watchdog('test_delete_alter', print_r($data, 1));
 
-    if(arg(3) == 'behat_github' || (isset($params) && $params['module'] == 'behat_github')) {
-        $actions = array('view', 'edit', 'delete');
-        $repo_manager = new GithubBehatEditor\RepoManager();
+    if($data['module'] == 'behat_github') {
+        watchdog('test_delete_alter_if', print_r('You are here', 1));
 
-        //@todo break this into a setParams type method
-        if(isset($params) && !in_array($params['action'], $actions)) {
-            //Run, CreateRun or Targeted Actions
-            $service_path = $params['service_path'];
-            $type = $service_path[5];
-            $repo_name = $service_path[7];
-            $action = $service_path[3];
-            $module = $service_path[4];
-            //Set Vars
-            if($type == 'groups') {
-                $gid = $service_path[6];
-            } else {
-                $gid = 0;
-            }
+        $git_actions = new GithubBehatEditor\GithubBehatEditorController();
+        $results = $git_actions->delete($data);
+        //@todo not sure the best way to send back data.
+        if($results['error'] == 0) {
+            drupal_set_message(t('File Delete and repo updated !message', array('!message' => $results['message'])));
+            //@todo push this message back to the screen using ajax
+            $data['messages'][] = $results['message'];
         } else {
-            $service_path = arg();
-            $type = $service_path[4];
-            $repo_name = $service_path[6];
-            $action = $service_path[2];
-            $module = $service_path[3];
-            //Set Vars
-            if($type == 'groups') {
-                $gid = $service_path[5];
-                $repo_manager->checkEditPathRedirectIfNeeded(array('uid' => $user->uid, 'path' => $service_path, 'action' => $action));
-            } else {
-                $gid = 0;
-            }
-        }
-        $service_path_tweaked = $service_path;
-        $filename = array_pop($service_path_tweaked);
-
-        //Now process request based on user or group repo
-        //
-        if($gid == 0) {
-            //This is a user based repo so just need to verify access
-            //Get repos and see if
-            //  1. user has repo
-            $perms = new GithubBehatEditor\RepoManager();
-            $repos = $perms->getUserRepoByRepoName(array('uid' => $uid, 'repo_name' => $repo_name));
-            if(empty($repo)) {
-                //One more check of their group level relations
-                $repos = $perms->getUsersGroupRepoByRepoName(array('uid' => $uid, 'repo_name' => $repo_name));
-                if(empty($repos)) {
-                    drupal_set_message('You and your group do not have access to this repo');
-                    drupal_goto('admin/behat/index');
-                }
-            }
-            //Must have passes the query for access now to call up the file
-            //@todo break this into a repoSetup type method
-
-            $repo_data = $repos['results'][0];
-            $test_folder = $repo_data['folder'];
-            $repo_account = $repo_data['repo_account'];
-            $full_name = $repo_account .'/'. $repo_name;
-            $repo_manager->cloneRepo(array($full_name), array('uid' => $user->uid, ''));
-            $github_dowbload_files = new GithubBehatEditor\GithubDownloadedFile();
-
-            //@todo break this into a repoSetup type method
-            $params = array(
-                'service_path' => $service_path,
-                'module' => $module,
-                'filename' => $filename,
-                'action' => $action,
-                'subfolder' => $test_folder,
-            );
-            $file_info = $github_dowbload_files->buildObject($params);
-            $data = $file_info;
-        } else { //Must be a group repo and view action
-            $perms = new BehatEditor\BehatPermissions($uid);
-            $users_groups = $perms->getGroupIDs();
-            if(!in_array($gid, $users_groups)){
-                //@todo better exit plan here
-                drupal_set_message('You are not in this group');
-                drupal_goto('admin/behat/index');
-            }
-            //See now if they already have this folder
-            //Lets grab the full db info for this repo
-            $repos = $repo_manager->getGroupRepo(array('gid' => $gid, 'repo_name' => $repo_name));
-            if(empty($repos['results']) || $repos['error'] == 1){
-                //@todo better exit plan here
-                drupal_set_message(t('The !repo repo could not be found for the group', array('!repo' => $repo_name)));
-                drupal_goto('admin/behat/index');
-            }
-            $repo_data = $repos['results'][0];
-            $test_folder = $repo_data['folder'];
-            $repo_account = $repo_data['repo_account'];
-            $full_name = $repo_account .'/'. $repo_name;
-            $repo_manager->cloneRepo(array($full_name), array('uid' => $user->uid, ''));
-            $github_dowbload_files = new GithubBehatEditor\GithubDownloadedFile();
-            $params = array(
-                'service_path' => $service_path,
-                'module' => $module,
-                'filename' => $filename,
-                'action' => $action,
-                'subfolder' => $test_folder,
-            );
-            $file_info = $github_dowbload_files->buildObject($params);
-            $data = $file_info;
+            drupal_set_message(t('Error processing file !error', array('!error' => $results['message'])));
+            $data['messages'][] =  t('Error adding file to the repo file !error', array('!error' => $results['message']));
         }
     }
+}
+
+
+/**
+ * Alter the show hook_behat_editor_show()
+ */
+
+function github_behat_editor_behat_editor_after_create_alter(&$data) {
+    if($data['module'] == 'behat_github') {
+        $git_actions = new GithubBehatEditor\GithubBehatEditorController();
+        $results = $git_actions->create($data);
+        //@todo not sure the best way to send back data.
+        if($results['error'] == 0) {
+            drupal_set_message(t('File Added and Pushed to repo !message', array('!message' => $results['message'])));
+            //@todo push this message back to the screen using ajax
+            $data['messages'][] = $results['message'];
+        } else {
+            drupal_set_message(t('Error processing file !error', array('!error' => $results['message'])));
+            $data['messages'][] =  t('Error adding file to the repo file !error', array('!error' => $results['message']));
+        }
+    }
+}
+
+
+/**
+ * Alter the show hook_behat_editor_show()
+ */
+
+function github_behat_editor_behat_editor_after_view_alter(&$data) {
+    if($data['module'] == 'behat_github') {
+        $git_actions = new GithubBehatEditor\GithubBehatEditorController();
+        $results = $git_actions->create($data);
+        //@todo not sure the best way to send back data.
+        if($results['error'] == 0) {
+            drupal_set_message(t('File Added and Pushed to repo !message', array('!message' => $results['message'])));
+            //@todo push this message back to the screen using ajax
+            $data['messages'][] = $results['message'];
+        } else {
+            drupal_set_message(t('Error processing file !error', array('!error' => $results['message'])));
+            $data['messages'][] =  t('Error adding file to the repo file !error', array('!error' => $results['message']));
+        }
+    }
+}
+
+/**
+ * Alter the show hook_behat_editor_show()
+ */
+
+function github_behat_editor_behat_editor_after_save_alter(&$data) {
+    if($data['module'] == 'behat_github') {
+        $git_actions = new GithubBehatEditor\GithubBehatEditorController();
+        $results = $git_actions->update($data);
+        //@todo not sure the best way to send back data.
+        if($results['error'] == 0) {
+            drupal_set_message(t('File Added and Pushed to repo !message', array('!message' => $results['message'])));
+            //@todo push this message back to the screen using ajax
+            $data['messages'][] =  $results['message'];
+        } else {
+            drupal_set_message(t('Error processing file !error', array('!error' => $results['message'])));
+            $data['messages'][] =  t('Error pushing file back to the repo file !error', array('!error' => $results['message']));
+        }
+    }
+}
+
+
+/**
+ * Alter the show hook_behat_editor_index()
+ */
+function github_behat_editor_behat_editor_index_alter(&$data) {
+        //@note I moved this to the github_behat_editor_behat_editor_files_found_alter
+        //@todo clean up if this really seems better.
+        //$github_load = new GithubBehatEditor\GithubBehatEditorController();
+        //$data = $github_load->index($data);
+}
+
+function github_behat_editor_behat_editor_files_found_alter(&$data, $context) {
+    if($context == 'public') {
+        $github_load = new GithubBehatEditor\GithubBehatEditorController();
+        $data = $github_load->index($data);
+    }
+}
+
+
+function  github_behat_editor_og_membership_insert(OgMembership $og_membership) {
+    drupal_set_message(t('You can update your github repositories for this group here !link',
+        array('!link' => l('Admin Repos', 'admin/behat/github_settings/groups'))));
+        dpm($og_membership);
+    composer_manager_register_autoloader();
+    $gid = $og_membership->gid;
+    //Get all repos for group and update user as needed
+    $groups = new GithubBehatEditor\GithubBehatEditorController();
+    $group_repos = $groups->getUsersGroupRepoByGid(array($gid));
+    dpm($group_repos);
+    $groups->checkIfRepoFolderExists($group_repos, arg(1));
+    drupal_set_message("Updated Group repos for user");
 }

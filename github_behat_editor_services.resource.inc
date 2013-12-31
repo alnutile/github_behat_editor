@@ -149,7 +149,6 @@ function _github_behat_editor_coming_soon($module, $filename, $path, $query) {
 }
 
 function _github_behat_editor_acl($arg){
-    return TRUE;
     if(user_access($arg)) {
         return TRUE;
     } else {

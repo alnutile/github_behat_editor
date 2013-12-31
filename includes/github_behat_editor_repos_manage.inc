@@ -17,7 +17,7 @@ use TQ\Git\StreamWrapper\StreamWrapper,
  *   add update delete
  */
 function github_behat_editor_repos_manage($type, $action, $id) {
-    $build['intro'] = t("Manage Repoos");
+    $build['intro'] = t("Manage Repos");
 
     $build['repos'] = drupal_get_form('github_behat_editor_repos_form', $type, $action, $id);
 
@@ -30,7 +30,7 @@ function github_behat_editor_repos_form($form, &$form_state) {
 
     composer_manager_register_autoloader();
 
-    $client = new Drupal\GithubBehatEditor\RepoManager();
+    $client = new Drupal\GithubBehatEditor\RepoModel();
     $repos_found = $client->getAllRepos();
 
     drupal_set_message(t('Return to !link', array('!link' => l('admin interface', 'admin/behat/github_settings/'))));
@@ -167,7 +167,7 @@ function github_behat_editor_repos_form_submit($form, &$form_state) {
     global $user;
     $repos = $form_state['values']['repo_name'];
     $folder = $form_state['values']['folder'];
-    $insert = new Drupal\GithubBehatEditor\RepoManager();
+    $insert = new Drupal\GithubBehatEditor\RepoModel();
     if($form_state['values']['type'] == 'user') {
         $results = $insert->insertRepo(array('repos' => $repos, 'folder' => $folder));
     }
