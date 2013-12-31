@@ -5,5 +5,4 @@ Integrates with the drupal behat_editor module
 
 to allow the user to pull in repo(s) and run and create tests.
 
-
 More coming soon...
