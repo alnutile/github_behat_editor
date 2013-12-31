@@ -15,8 +15,8 @@ function github_behat_editor_install(){
         }
     }
 
-    $modules = array('github_behat_editor_services');
-    module_enable($modules);
+    //$modules = array('github_behat_editor_services');
+    //module_enable($modules);
 
     $path = file_build_uri("/behat_github/");
     if (!file_prepare_directory($path, FILE_CREATE_DIRECTORY | FILE_MODIFY_PERMISSIONS)) {
