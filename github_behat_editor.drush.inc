@@ -104,4 +104,6 @@ HEREDOC;
     $file = fopen($full_path, 'w');
     fwrite($file, $data);
     fclose($file);
+
+    drupal_chmod($full_path, $mode = 0775); // in case drush makes it I want www-data to write to this
 }
