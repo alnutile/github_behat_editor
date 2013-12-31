@@ -322,7 +322,6 @@ function github_behat_editor_behat_editor_files_found_alter(&$data, $context) {
     if($context == 'public') {
         $github_load = new GithubBehatEditor\GithubBehatEditorController();
         $data = $github_load->index($data);
-        watchdog('github_behat_editor', 'Ran files found all alter', array(), WATCHDOG_NOTICE);
     }
 }
 

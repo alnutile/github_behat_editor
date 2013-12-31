@@ -118,7 +118,6 @@ class GithubBehatEditorController {
         $this->repos_by_repo_name = array_merge($this->user_and_group_repos, $this->repos_by_repo_name);
         //now parse the directories for these files
         $this->getRepoFiles();
-        watchdog('test_repos_found', print_r($this->files_array_alter, 1));
 
         $this->files_array = array_merge($this->files_array, $this->files_array_alter);
         return $this->files_array;
