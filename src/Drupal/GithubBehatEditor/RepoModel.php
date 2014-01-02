@@ -23,7 +23,8 @@ class RepoModel {
     public $git_path;
     public $public_absolute_path;
     public $repo_name;
-    public $org_repos;
+    public $org_repos = array();
+    public $user_repos = array();
     public $gid;
 
     const URI = 'github.com';
@@ -36,11 +37,12 @@ class RepoModel {
     }
 
     public function getAllRepos() {
-        $this->client->api('current_user')->setPerPage(200);
-        $this->repos =  $this->client->api('current_user')->repositories();
+
+        $this->repos =  $this->client->api('current_user');
+        $this->repos->setPerPage(200);
+        $this->user_repos = $this->repos->repositories();
         $this->org_repos = $this->getOrgRepos(array()); //@TODO get all users orgs then get repos
-        dpm(array_merge($this->org_repos, $this->repos));
-        return array_merge($this->org_repos, $this->repos);
+        return array_merge($this->org_repos, $this->user_repos);
     }
 
     public function getOrgRepos() {
@@ -48,9 +50,11 @@ class RepoModel {
         $orgs = $this->client->api('current_user')->organizations();
         $repos_all = array();
         if(!empty($orgs)) {
+            $repos = $this->client->api('organization');
+            $repos->setPerPage(200);
             foreach($orgs as $key => $value) {
-                $repos = $this->client->api('organization')->repositories($value['login'], $type = 'all');
-                $repos_all = array_merge($repos_all, $repos);
+                $repos_orgs = $repos->repositories($value['login'], $type = 'all');
+                $repos_all = array_merge($repos_all, $repos_orgs);
             }
         }
         return $repos_all;
