@@ -5,6 +5,10 @@
 }
 
 
+select#migrate-github-files {
+    min-height: 500px;
+}
+
 button#edit-github-add {
    height: 39px;
    min-width: 100%;

@@ -62,6 +62,16 @@ function github_behat_editor_menu() {
         'file' => 'github_behat_editor_repos_group.inc',
     );
 
+    $items['admin/behat/github_settings/migrate'] =  array(
+        'title' => 'Github Repos Migrate',
+        'access arguments' => array('github behat admin settings'),
+        'type' => MENU_LOCAL_TASK,
+        'weight' => 10,
+        'page callback' => 'github_behat_editor_migrate',
+        'file path' => "$path/includes/",
+        'file' => 'github_behat_editor_migrate.inc',
+    );
+
     $items['admin/behat/github_settings/repos/%/%/%'] =  array(
         'title' => 'Add Github Repo for your user account',
         'access arguments' => array('behat admin settings'),
