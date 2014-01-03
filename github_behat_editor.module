@@ -335,6 +335,30 @@ function github_behat_editor_behat_editor_files_found_alter(&$data, $context) {
     }
 }
 
+/**
+ * Implements hook_behat_editor_results_per_file()
+ * to get the results per file and see if it needs some
+ * help
+ */
+function github_behat_editor_behat_editor_results_per_file_alter(&$rows, $params) {
+    $filename = $params['filename'];
+    $module = $params['module'];
+    $file_object = $params['file_object'];
+    //1. if rows are blank
+    //2. the module is not behat_tests and the path for module is FALSE then take a look at the settings
+    //3. if the settings path include behat_github then put that into the results and or query again since
+    //   results most likely are null
+    if(empty($rows)) {
+        if(!drupal_get_path('module', $module) && $module != 'behat_tests') {
+            $query_results = new Drupal\BehatEditor\Results();
+            if($file_object['module'] == 'behat_github') {
+                $data = $query_results->getLatestResultForFile('behat_github', $filename, $file_object, FALSE);
+                $rows = $data['results'];
+            }
+        }
+    }
+}
+
 
 function  github_behat_editor_og_membership_insert(OgMembership $og_membership) {
     drupal_set_message(t('You can update your github repositories for this group here !link',
