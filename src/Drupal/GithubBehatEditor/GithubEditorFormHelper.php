@@ -28,7 +28,6 @@ class GithubEditorFormHelper {
     public function buttonAdd() {
         $button = array();
         $this->getAllRepos();
-        dpm($this->all_repos);
         return $button;
     }
 

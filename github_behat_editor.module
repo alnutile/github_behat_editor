@@ -236,10 +236,8 @@ function github_behat_editor_behat_editor_edit_alter(&$data) {
  */
 
 function github_behat_editor_behat_editor_after_delete_alter(&$data) {
-    watchdog('test_delete_alter', print_r($data, 1));
 
     if($data['module'] == 'behat_github') {
-        watchdog('test_delete_alter_if', print_r('You are here', 1));
 
         $git_actions = new GithubBehatEditor\GithubBehatEditorController();
         $results = $git_actions->delete($data);
@@ -363,13 +361,11 @@ function github_behat_editor_behat_editor_results_per_file_alter(&$rows, $params
 function  github_behat_editor_og_membership_insert(OgMembership $og_membership) {
     drupal_set_message(t('You can update your github repositories for this group here !link',
         array('!link' => l('Admin Repos', 'admin/behat/github_settings/groups'))));
-        dpm($og_membership);
     composer_manager_register_autoloader();
     $gid = $og_membership->gid;
     //Get all repos for group and update user as needed
     $groups = new GithubBehatEditor\GithubBehatEditorController();
     $group_repos = $groups->getUsersGroupRepoByGid(array($gid));
-    dpm($group_repos);
     $groups->checkIfRepoFolderExists($group_repos, arg(1));
     drupal_set_message("Updated Group repos for user");
 }

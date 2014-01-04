@@ -127,7 +127,6 @@ function github_behat_editor_migratate_form_submit($form, &$form_state){
         drupal_set_message($message);
         _github_behat_editor_remove_old_file(array($action_message, $files_to_move_or_copy_all));
         foreach($files_name_only_to_add_to_repo_all as $file_to_add_to_repo) {
-            dpm($file_to_add_to_repo);
             $result = _github_behat_editor_get_records(array($file_to_add_to_repo));
             if ($result) {
                 foreach ($result as $record) {
