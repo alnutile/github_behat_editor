@@ -110,15 +110,15 @@ class GithubBehatEditorController {
     public function index($data = array()){
         //@todo move much of this logic into model
         $this->files_array = $data;
+        $all_repos = array();
         $this->getUserRepos();
         $this->updateAllRepos($this->user_and_group_repos);
-        $this->repos_by_repo_name = $this->user_and_group_repos;
+        $all_repos = $this->user_and_group_repos;
         $this->getUsersGroupRepo();
         $this->updateAllRepos($this->user_and_group_repos, 'groups');
-        $this->repos_by_repo_name = array_merge($this->user_and_group_repos, $this->repos_by_repo_name);
-        //now parse the directories for these files
+        $all_repos = array_merge($this->user_and_group_repos, $all_repos);
+        $this->repos = $all_repos;
         $this->getRepoFiles();
-
         $this->files_array = array_merge($this->files_array, $this->files_array_alter);
         return $this->files_array;
     }

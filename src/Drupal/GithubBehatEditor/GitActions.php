@@ -169,6 +169,33 @@ class GitActions {
         return array('error' => 0, 'message' => 'No changes to the file so no git commit');
     }
 
+    /**
+     * Use null for files have not tested with many files and a commit push
+     *
+     * @param $full_path_to_repo_folder
+     * @param array $files
+     * @return array
+     */
+    public function updateManyFiles($full_path_to_repo_folder, $sub_folder, array $files = null, $message = FALSE) {
+        global $user;
+        $this->full_path_to_file_folder = $full_path_to_repo_folder . '/' . $sub_folder;
+        $this->full_path_to_repo_folder = $full_path_to_repo_folder;
+        $this->git = Repository::open($this->full_path_to_repo_folder, $this->git_path);
+        $this->git->add($files);
+        $this->git->commit("Commit via behat editor by $user->name $message", NULL, $author = null);
+        $results = $this->gitPull();
+        if($results['error'] == 1) {
+            return array('error' => 1, 'message' => $results['message']);
+        }
+        $results = $this->gitPush();
+        if($results['error'] == 1) {
+            return array('error' => 1, 'message' => $results['message']);
+        }
+        $message = $this->git->getLog(1);
+        watchdog('github_behat_editor', t('Git delete message !message'), array('!message' => implode("\n", $message)), WATCHDOG_NOTICE);
+        return array('error' => 0, 'message' => t('Files Committed to repo'));
+    }
+
     public function setCommitStatus(){
 
     }

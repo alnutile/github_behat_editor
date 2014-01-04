@@ -23,6 +23,8 @@ class RepoModel {
     public $git_path;
     public $public_absolute_path;
     public $repo_name;
+    public $org_repos = array();
+    public $user_repos = array();
     public $gid;
 
     const URI = 'github.com';
@@ -35,9 +37,27 @@ class RepoModel {
     }
 
     public function getAllRepos() {
-        $this->client->api('current_user')->setPerPage(200);
-        $this->repos =  $this->client->api('current_user')->repositories();
-        return $this->repos;
+
+        $this->repos =  $this->client->api('current_user');
+        $this->repos->setPerPage(200);
+        $this->user_repos = $this->repos->repositories();
+        $this->org_repos = $this->getOrgRepos(array()); //@TODO get all users orgs then get repos
+        return array_merge($this->org_repos, $this->user_repos);
+    }
+
+    public function getOrgRepos() {
+        $orgs = array();
+        $orgs = $this->client->api('current_user')->organizations();
+        $repos_all = array();
+        if(!empty($orgs)) {
+            $repos = $this->client->api('organization');
+            $repos->setPerPage(200);
+            foreach($orgs as $key => $value) {
+                $repos_orgs = $repos->repositories($value['login'], $type = 'all');
+                $repos_all = array_merge($repos_all, $repos_orgs);
+            }
+        }
+        return $repos_all;
     }
 
     public function getUserRepos($uid){
@@ -212,13 +232,13 @@ class RepoModel {
             }
 
             $git = new GitActions();
-            watchdog('test_group_path', print_r($this->public_absolute_path, 1));
             if($git->checkIfGitFolder($this->public_absolute_path)) {
                 $clone = $git->gitClone(array('destination' => $this->public_absolute_path, 'full_repo_path' => $full_repo_path, 'use_current_path' => TRUE));
                 if($clone['error'] == 0) {
                     drupal_set_message(t("There is not a git folder @folder so a new clone was made.", array('@folder' => $this->public_absolute_path)));
                 } else {
-                    drupal_set_message(t("There was a problem during the clone here is the @output", array('@output' => implode($clone['response']))));
+                    watchdog('test_clone_error', print_r($clone, 1));
+                    drupal_set_message(t("There was a problem during the clone here is the @output", array('@output' => implode("/n", $clone['response']))));
                 }
             } else {
                 drupal_set_message(t("This @folder is a git folder already so we will just leave it alone for now.", array('@folder' => $this->public_absolute_path)));
@@ -251,8 +271,6 @@ class RepoModel {
 
             $git = new GitActions();
             if($git->checkIfGitFolder($this->public_absolute_path)) {
-                watchdog('test_repo_path', print_r($full_repo_path, 1));
-                watchdog('test_public_absolute', print_r($this->public_absolute_path, 1));
                 $clone = $git->gitClone(array('destination' => $this->public_absolute_path, 'full_repo_path' => $full_repo_path, 'use_current_path' => TRUE));
                 if($clone['error'] == 0) {
                     $message = t("There is not a git folder @folder so a new clone was made.", array('@folder' => $this->public_absolute_path));

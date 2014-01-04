@@ -141,10 +141,6 @@ function github_behat_editor_services_resources() {
 }
 
 function _github_behat_editor_coming_soon($module, $filename, $path, $query) {
-    watchdog('test_module', print_r($module, 1));
-    watchdog('test_filename', print_r($filename, 1));
-    watchdog('test_path', print_r($path, 1));
-    watchdog('test_query', print_r($query, 1));
     return "Coming soon";
 }
 
