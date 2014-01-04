@@ -29,8 +29,7 @@ function github_behat_editor_group_repo_settings($form, &$form_state) {
     $build['#attached']['css'][] = $path . '/css/github_behat_editor_app.css';
 
     $repos = new Drupal\GithubBehatEditor\RepoModel() ;
-
-    $groupRepos = $repos->getGroupRepos($user->uid);
+    $groupRepos = $repos->getGroupRepos(array('uid' => $user->uid));
 
     $header = array(
         'id' => array('data' => t('ID')),

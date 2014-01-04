@@ -106,7 +106,7 @@ class RepoModel {
         $settings = new BehatEditor\BehatPermissions($this->uid);
         $gids = $settings->getGroupIDs();
         $queryRepos = new GithubRepoQueries();
-        $results = $queryRepos->selectAllByGid($gids);
+        $results = $queryRepos->selectAllByGid(array_values($gids));
         $records = $results['results'];
         return array('results' => $records, 'error' => $results['error']);
     }

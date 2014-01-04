@@ -92,7 +92,7 @@ class GithubBehatEditorController {
 
     protected function checkGroupRepoAccess(){
         $this->repos = $this->repo_manager->getGroupRepo(array('gid' => $this->gid, 'repo_name' => $this->repo_name));
-        if(empty($this->repos['results']) || $this->repos['error'] == 1){
+        if ( (empty($this->repos['results']) || $this->repos['error'] == 1) && isset($this->repo_name) ) {
             //@todo better exit plan here
             drupal_set_message(t('The !repo repo could not be found for the group', array('!repo' => $this->repo_name)));
             //drupal_goto('admin/behat/index');
