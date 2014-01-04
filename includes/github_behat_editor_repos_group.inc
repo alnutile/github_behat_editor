@@ -180,7 +180,7 @@ function _github_editor_build_table_group_rows($rows) {
         $output[$value['id']]['repo_url'] = $value['repo_url'];
         $gid = $value['gid'];
         //@todo not find the right og api call for this
-        $node = node_load(og_membership_load($gid)->etid)->title;
+        $node = node_load($gid)->title;
         $output[$value['id']]['group_name'] = $node;
         $output[$value['id']]['active'] = $value['active'];
         $output[$value['id']]['#attributes'] = array('class' => array($value['repo_name']));
