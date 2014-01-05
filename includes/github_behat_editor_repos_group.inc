@@ -204,7 +204,6 @@ function batch_update_group_repo($repo_array, $message, $total, $current, &$cont
     $context['sandbox']['progress']= $current;
     $context['results'][] = $repo_array['repo_name'] . " with message " . $output['message'];
     $context['message'] = t("Repo updated @name with message @message", array('@name' => $repo_array['repo_name'], '@message' => $output['message']));
-
 }
 
 function _github_behat_editor_batch_group_repos_finished($success, $results, $operations) {
