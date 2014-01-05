@@ -40,6 +40,24 @@ class GitActions {
 
     }
 
+    public function pull(array $params = null) {
+        $files = array();
+        global $user;
+        $message = null;
+        if(!empty($params)) {
+            $this->full_path_to_file_folder = $params['full_path_to_repo_folder'];
+            $files = $params['files'];
+            $user = $params['user'];
+            $message = $params['message'];
+        }
+        //1. clean up the folder if there is work in there
+        $this->git = Repository::open($this->full_path_to_file_folder, $this->git_path);
+        if(!$this->git->isDirty()) {
+            return $this->gitPull();
+        } else {
+            return FALSE;
+        }
+    }
 
     /**
      *
@@ -72,6 +90,7 @@ class GitActions {
 
     protected function gitPull() {
         exec("cd $this->full_path_to_file_folder && git pull", $output, $return_var);
+
         $message = implode("\n", $output);
         if($return_var == 1) {
             watchdog('github_behat_editor', t('During the git pull action there was this error !error'), array('!error' => $message), WATCHDOG_ERROR);
@@ -83,6 +102,7 @@ class GitActions {
 
     protected function gitPush(){
         exec("cd $this->full_path_to_file_folder && git push", $output, $return_var);
+
         $message = implode("\n", $output);
         if($return_var == 1) {
             watchdog('github_behat_editor', t('During the git push action there was an error !error'), array('!error' => $message), WATCHDOG_ERROR);
@@ -212,6 +232,7 @@ class GitActions {
      *    full url to clone the repo from
      */
     public function gitClone(array $params){
+        dpm($params);
         $current = (isset($params['use_current_path']) && $params['use_current_path'] == TRUE) ? '.' : '';
         exec("cd {$params['destination']} && $this->git_path clone {$params['full_repo_path']} $current", $output, $return_val);
         return array('response' => $output, 'error' => $return_val);

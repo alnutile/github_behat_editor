@@ -4,6 +4,8 @@ namespace Drupal\GithubBehatEditor;
 
 use Drupal\GithubBehatEditor,
     Drupal\BehatEditor;
+use TQ\Git\Repository\Repository,
+    TQ\Git\Cli\Binary;
 
 class GithubBehatEditorController {
     protected $actions = array('view', 'edit', 'delete');
@@ -142,13 +144,10 @@ class GithubBehatEditorController {
         return $results;
     }
 
-    public function getAllReposForUser($user) {
-        $this->getUserRepos();
-        $this->repos_by_repo_name = $this->user_and_group_repos;
-        $this->getUsersGroupRepo();
-        $this->repos_by_repo_name = array_merge($this->user_and_group_repos, $this->repos_by_repo_name);
-        //now parse the directories for these files
-        return $this->repos_by_repo_name;
+    public function pull(array $params = array()) {
+        $git_actions = new GitActions();
+        $results = $git_actions->pull($params);
+        return $results;
     }
 
     /**
@@ -160,23 +159,28 @@ class GithubBehatEditorController {
     public function checkIfRepoFolderExists(array $repos, $uid = FALSE){
 
         foreach($repos as $key => $value) {
+            $user = user_load($value['uid']);
             $path = $this->repoBasePath($value);
             $repo_root_exists = file_exists($path);
             $account_and_reponame = $value['repo_account'] . '/' . $value['repo_name'];
             /**
              * Need to see if the folder exists if not make it and then clone
              */
+
             if(!$repo_root_exists) {
+                $repo_actions = new RepoModel();
                 drupal_mkdir($path, $mode = NULL, $recursive = TRUE);
                 drupal_chmod($path, $mode = 0775);
+                if(!isset($uid)) {
+                    $uid = $value['uid'];
+                }
+                $repo_actions->cloneRepo(array($account_and_reponame), array('uid' => $uid, 'gid' => $value['gid']));
+            } else {
+                //do a pull to make sure it is up to date
+                $path_with_folder = $path;
+                $results = $this->pull(array('full_path_to_repo_folder' => $path_with_folder, 'user' => $user, 'files' => null, 'message' => t('Group update to repo')));
+                return $results;
             }
-
-            if(!isset($uid)) {
-                $uid = $value['uid'];
-            }
-
-            $repo_actions = new RepoModel();
-            $repo_actions->cloneRepo(array($account_and_reponame), array('uid' => $uid, 'gid' => $value['gid']));
         }
     }
 
@@ -262,6 +266,17 @@ class GithubBehatEditorController {
         return $this->user_and_group_repos;
     }
 
+    public function getReposByRepoTableId(array $repos_ids, $keyed_by_name = TRUE) {
+        $repos = $this->repo_manager->getReposByTableId($repos_ids);
+        $this->repos = $repos['results'];
+        if($keyed_by_name) {
+            $this->user_and_group_repos = $this->keyReposByName();
+        } else {
+            $this->user_and_group_repos = $this->repos;
+        }
+        return $this->user_and_group_repos;
+    }
+
     public function getUsersGroupRepoByGid(array $gid){
         $repos = $this->repo_manager->getGroupReposByGid($gid);
         return $repos['results'];
@@ -276,6 +291,8 @@ class GithubBehatEditorController {
                     $repos_by_name[$value['repo_name']]['gid'] = $value['gid'];
                     $repos_by_name[$value['repo_name']]['uid'] = $value['uid'];
                     $repos_by_name[$value['repo_name']]['folder'] = $value['folder'];
+                    $repos_by_name[$value['repo_name']]['repo_account'] = $value['repo_account'];
+                    $repos_by_name[$value['repo_name']]['repo_url'] = $value['repo_url'];
                 }
             }
         }
@@ -315,6 +332,86 @@ class GithubBehatEditorController {
             }
             $this->files_array_alter[$value['repo_name']] = $file_data;
         }
+    }
+
+
+    /**
+     * Not happy with all the methods I made that do too much
+     * This one will break out into smaller pieces and begin the process
+     * of making it easier to reuse these helpers/methods
+     * @param array $params
+     * @return TRUE if exists
+     */
+    public function checkIfFolderExists(array $params) {
+        $path = $this->get_full_path_using_repo_query_results($params);
+        $full_path = drupal_realpath($path);
+        return file_exists($full_path);
+    }
+
+    public function checkIfGitFolderExists(array $params) {
+        $full_path = $this->get_full_path_using_repo_query_results($params);
+        return file_exists($full_path . '/.git');
+    }
+
+    public function get_full_path_using_repo_query_results(array $params){
+        $repo_db_results_array = $params['repo_array'];
+        $root = 'behat_github';
+        if($repo_db_results_array['gid'] == 0) {
+            $type = 'users';
+            $id = $repo_db_results_array['uid'];
+        } else {
+            $type = 'groups';
+            $id = $repo_db_results_array['gid'];
+        }
+        $repo_name = $repo_db_results_array['repo_name'];
+        $path = file_build_uri("/behat_github/$type/$id/$repo_name");
+        $full_path = drupal_realpath($path);
+        return $full_path;
+    }
+
+    public function setFolderForGit(array $params) {
+        $full_path = $params['full_path_git_root'];
+        drupal_mkdir($full_path, $mode = NULL, $recursive = TRUE);
+        drupal_chmod($full_path, $mode = 0775);
+    }
+
+    public function cloneRepo(array $params) {
+        $git_actions = new GitActions();
+        return $git_actions->gitClone($params);
+
+    }
+
+    public function getAllReposForUser($user) {
+        $this->getUserRepos();
+        $this->repos_by_repo_name = $this->user_and_group_repos;
+        $this->getUsersGroupRepo();
+        $this->repos_by_repo_name = array_merge($this->user_and_group_repos, $this->repos_by_repo_name);
+        //now parse the directories for these files
+        return $this->repos_by_repo_name;
+    }
+
+    public function buildAuthGitUrl(array $params) {
+        $repo_name = $params['repo_array']['repo_name'];
+        $account_name = $params['repo_array']['repo_account'];
+        $username = variable_get('github_api_username');
+        $password = variable_get('github_api_password');
+        return "https://$username:$password@github.com/$account_name/$repo_name";
+    }
+
+    public function checkIfDirty(array $params) {
+        $path = $params['full_path'];
+        $git = Repository::open($path);
+        if($git->isDirty()) {
+            $git->add();
+            //$git->commit("Bulk add and update repos for users and groups", $file = null, $author = null);
+        }
+    }
+
+    public function simplePull(array $params) {
+        $path = $params['full_path'];
+        exec("cd $path && git pull", $output, $return_var);
+        return array('message' => implode("\n", $output), 'error' => $return_var);
+
     }
 
 }

@@ -101,6 +101,15 @@ class RepoModel {
         return $repos;
     }
 
+    public function getReposByTableId(array $repos_ids){
+        $repos = array();
+        $queryRepos = new GithubRepoQueries();
+        $results = $queryRepos->selectAllById($repos_ids);
+        $records = $results['results'];
+        return array('results' => $records, 'error' => $results['error']);
+    }
+
+
     public function getGroupRepos($params){
         $this->uid = $params['uid'];
         $settings = new BehatEditor\BehatPermissions($this->uid);
@@ -263,6 +272,9 @@ class RepoModel {
             $full_repo_path = RepoModel::PROTOCOL . "://$username:$password@".RepoModel::URI."/$repo";
 
             $this->gid = 0;
+            if(isset($params['gid'])) {
+                $this->gid = $params['gid'];
+            }
             if( self::_conditions() ) {
                 drupal_set_message(t('Folder @folder already exists so no new clone', array('@folder' => $this->repo_name)), 'info');
                 watchdog('github_behat_editor_clone_repo', t('Folder @folder already exists so no new clone', array('@folder' => $this->repo_name)), 'info');
@@ -310,6 +322,9 @@ class RepoModel {
         return $relative_path;
     }
 
+    /**
+     * @TODO this is a clone not a pull separate and make sure not to break any code using it
+     */
     public function pullRequest(array $repos) {
         $public = file_build_uri("/behat_github/");
         foreach($repos as $repo) {
