@@ -358,14 +358,47 @@ function github_behat_editor_behat_editor_results_per_file_alter(&$rows, $params
 }
 
 
+/**
+ * Implements the hook_og_memebership_insert
+ * and on new user will setup the Group repos
+ * @param OgMembership $og_membership
+ */
 function  github_behat_editor_og_membership_insert(OgMembership $og_membership) {
     drupal_set_message(t('You can update your github repositories for this group here !link',
         array('!link' => l('Admin Repos', 'admin/behat/github_settings/groups'))));
     composer_manager_register_autoloader();
-    $gid = $og_membership->gid;
-    //Get all repos for group and update user as needed
-    $groups = new GithubBehatEditor\GithubBehatEditorController();
-    $group_repos = $groups->getUsersGroupRepoByGid(array($gid));
-    $groups->checkIfRepoFolderExists($group_repos, arg(1));
-    drupal_set_message("Updated Group repos for user");
+    $uid = $og_membership->etid;
+    $user = user_load($uid);
+    $repo_action = new GithubBehatEditor\GithubBehatEditorController($user);
+    $group_repos = $repo_action->getReposByRepoGroupId(array('chosen' => array($og_membership->gid)));
+    foreach($group_repos as $key => $repo_array) {
+        $repo_array['gid'] = 0;
+        $repo_array['uid'] = $uid;
+        _github_behat_editor_setup_repos(array('repo_array' => $repo_array, 'repo_action' => $repo_action));
+    }
+}
+
+function _github_behat_editor_setup_repos($params) {
+    $repo_array = $params['repo_array'];
+    $repo_action = $params['repo_action'];
+    $path = $repo_action->get_full_path_using_repo_query_results(array('repo_array' => $repo_array));
+    if ( !$repo_action->checkIfFolderExists(array('repo_array' => $repo_array)) ) {
+        $path = $repo_action->getFullPath(array('repo_array' => $repo_array));
+        $output = $repo_action->setFolderForGit( array('full_path' => $path) );
+        drupal_set_message(t("Made folder !folder for !repo for user !message", array('!folder' => $path, '!repo' => $repo_array['repo_name'], '!message' => $output['message'])), $type = 'info');
+    }
+
+    if ( !$repo_action->checkIfGitFolderExists(array('repo_array' => $repo_array)) ) {
+        //do a git clone in this folder
+        $repo_url = $repo_action->buildAuthGitUrl(array('repo_array' => $repo_array));
+        $repo_action->cloneRepo(array('destination' => $path, 'use_current_path' => TRUE, 'full_repo_path' => $repo_url));
+        drupal_set_message(t("Cloned Group repo !repo for user !message", array('!repo' => $repo_array['repo_name'], '!message' => $output['message'])), $type = 'info');
+    } else {
+        //just do a check clean and pull if all is well
+        $repo_action->checkIfDirty(array('full_path' => $path));
+        //Finally just do a pull for making sure we have it all
+        $test_folder = $path . '/' . $repo_array['folder'];
+        $output = $repo_action->simplePull(array('full_path' => $test_folder));
+        drupal_set_message(t("Updated Group repo !repo for user !message", array('!repo' => $repo_array['repo_name'], '!message' => $output['message'])), $type = 'info');
+    }
 }
