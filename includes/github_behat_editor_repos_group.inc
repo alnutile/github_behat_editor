@@ -183,9 +183,9 @@ function batch_update_group_repo($repo_array, $message, $total, $current, &$cont
     //a. if not do a clone
     //b. else do a pull to update it after making sure it is clean
     $path = $repo_action->get_full_path_using_repo_query_results(array('repo_array' => $repo_array));
-
     if ( !$repo_action->checkIfFolderExists(array('repo_array' => $repo_array)) ) {
-        $repo_action->setFolderForGit( array('full_path_git_root' => $path) );
+        $path = $repo_action->getFullPath(array('repo_array' => $repo_array));
+        $output = $repo_action->setFolderForGit( array('full_path' => $path) );
     }
 
     if ( !$repo_action->checkIfGitFolderExists(array('repo_array' => $repo_array)) ) {

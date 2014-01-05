@@ -370,9 +370,31 @@ class GithubBehatEditorController {
     }
 
     public function setFolderForGit(array $params) {
-        $full_path = $params['full_path_git_root'];
-        drupal_mkdir($full_path, $mode = NULL, $recursive = TRUE);
-        drupal_chmod($full_path, $mode = 0775);
+        $full_path = $params['full_path'];
+        if (!file_prepare_directory($full_path, FILE_CREATE_DIRECTORY | FILE_MODIFY_PERMISSIONS)) {
+            $message = t('Folder could not be made at @folder', array('@folder' => $full_path));
+            return array('message' => $message, 'error' => 1);
+        } else {
+            drupal_chmod($full_path, $mode = 0775); // in case drush makes it I want www-data to write to this
+            $message = t('Folder made at @folder', array('@folder' => $full_path));
+            return array('message' => $message, 'error' => 1);
+        }
+    }
+
+    public function getFullPath(array $params) {
+        $repo_array = $params['repo_array'];
+        if($repo_array['gid'] == 0) {
+            $id = $repo_array['uid'];
+            $type = 'users';
+        } else {
+            $id = $repo_array['gid'];
+            $type = 'groups';
+        }
+        $repo_name = $repo_array['repo_name'];
+        $path = file_build_uri("/behat_github/$type");
+        $path = drupal_realpath($path);
+        $full_path = $path . "/$id/$repo_name";
+        return $full_path;
     }
 
     public function cloneRepo(array $params) {
