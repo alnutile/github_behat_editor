@@ -29,8 +29,7 @@ function github_behat_editor_group_repo_settings($form, &$form_state) {
     $build['#attached']['css'][] = $path . '/css/github_behat_editor_app.css';
 
     $repos = new Drupal\GithubBehatEditor\RepoModel() ;
-
-    $groupRepos = $repos->getGroupRepos($user->uid);
+    $groupRepos = $repos->getGroupRepos(array('uid' => $user->uid));
 
     $header = array(
         'id' => array('data' => t('ID')),
@@ -79,6 +78,7 @@ function github_behat_editor_group_repo_settings($form, &$form_state) {
         '#type' => 'submit',
         '#value' => 'Update and Verify all Repos <i class="glyphicon glyphicon-question-sign"></i>',
         '#submit' => array('github_behat_editor_batch_groups_repos_submit'),
+        '#validate' => array('github_behat_editor_batch_groups_repos_validate'),
         '#attributes' =>
             array(
                 'id' => 'update-repos-users',
@@ -92,21 +92,32 @@ function github_behat_editor_group_repo_settings($form, &$form_state) {
     return $build;
 }
 
+function github_behat_editor_batch_groups_repos_validate($form, &$form_state) {
+        if (!is_array($form_state['values']['dashboard']) || !count(array_filter($form_state['values']['dashboard']))) {
+            form_set_error('', t('No items selected.'));
+        }
+}
+
 function github_behat_editor_batch_groups_repos_submit($form, &$form_state) {
-    $batch = _github_behat_editor_batch_groups_repos_update();
+    $chosen = $form_state['values']['dashboard'];
+    $batch = _github_behat_editor_batch_groups_repos_update(array('chosen' => $chosen));
     batch_set($batch);
 }
 
-function _github_behat_editor_batch_groups_repos_update(){
+function _github_behat_editor_batch_groups_repos_update($params){
     $operations = array();
     global $user;
-    $user_repos = new GithubBehatEditor\GithubBehatEditorController($user);
-    $user_repos = $user_repos->getUsersGroupRepo($keyed_by_name = FALSE);
-
-
-    $total = count($user_repos);
+    $group_repos = new GithubBehatEditor\GithubBehatEditorController($user);
+    $group_repos = $group_repos->getReposByRepoTableId($params['chosen'], $keyed_by_name = TRUE);
+    //foreach group repos
+    //find users in those groups
+    //then add to the group_repos array more repos
+    //but based on the user id path
+    //setting the gid to 0 will help
+    _github_behat_editor_merge_user_paths($group_repos);
+    $total = count($group_repos);
     $count = 1;
-    foreach($user_repos as $key => $value) {
+    foreach($group_repos as $key => $value) {
         $operations[] = array('batch_update_group_repo',
             array(
                 'repo_array' => $value,
@@ -128,6 +139,30 @@ function _github_behat_editor_batch_groups_repos_update(){
     return $batch;
 }
 
+/**
+ * Update all the users in the group as well
+ * @param $group_repos
+ */
+function _github_behat_editor_merge_user_paths(&$group_repos) {
+    $group_repos_temp = array();
+    foreach($group_repos as $key => $value) {
+        $repo_gid = $value['gid'];
+        $query = db_select('og_membership', 'og')
+            ->fields('og', array('etid'))
+            ->condition('og.gid', $repo_gid, '=');
+        $results = $query->execute();
+        $users = $results->fetchAll(PDO::FETCH_COLUMN, 0);
+        foreach($users as $key_user => $value_user) {
+            $user_repo = array();
+            $user_repo[$value_user] = $value;
+            $user_repo[$value_user]['gid'] = 0; //forces it to be a user pull
+            $user_repo[$value_user]['uid'] = $value_user;
+            $group_repos_temp = array_merge($group_repos_temp, $user_repo);
+        }
+    }
+    $group_repos = array_merge($group_repos_temp, $group_repos);
+}
+
 
 function batch_update_group_repo($repo_array, $message, $total, $current, &$context){
     if (empty($context['sandbox'])) {
@@ -142,12 +177,33 @@ function batch_update_group_repo($repo_array, $message, $total, $current, &$cont
     global $user;
     //Take repo_array and run an update
     $repo_action = new GithubBehatEditor\GithubBehatEditorController();
-    $repo_action->checkIfRepoFolderExists(array($repo_array), $uid = $user->uid);
+
+    //1. check if the folder exist
+    //2. if it does great then see if .git exists
+    //a. if not do a clone
+    //b. else do a pull to update it after making sure it is clean
+    $path = $repo_action->get_full_path_using_repo_query_results(array('repo_array' => $repo_array));
+    if ( !$repo_action->checkIfFolderExists(array('repo_array' => $repo_array)) ) {
+        $path = $repo_action->getFullPath(array('repo_array' => $repo_array));
+        $output = $repo_action->setFolderForGit( array('full_path' => $path) );
+    }
+
+    if ( !$repo_action->checkIfGitFolderExists(array('repo_array' => $repo_array)) ) {
+        //do a git clone in this folder
+        $repo_url = $repo_action->buildAuthGitUrl(array('repo_array' => $repo_array));
+        $repo_action->cloneRepo(array('destination' => $path, 'use_current_path' => TRUE, 'full_repo_path' => $repo_url));
+    } else {
+        //just do a check clean and pull if all is well
+        $repo_action->checkIfDirty(array('full_path' => $path));
+        //Finally just do a pull for making sure we have it all
+        $test_folder = $path . '/' . $repo_array['folder'];
+        $output = $repo_action->simplePull(array('full_path' => $test_folder));
+    }
 
     //Once that is done return
     $context['sandbox']['progress']= $current;
-    $context['results'][] = $repo_array['repo_name'];
-    $context['message'] = t("Repo updated @name", array('@name' => $repo_array['repo_name']));
+    $context['results'][] = $repo_array['repo_name'] . " with message " . $output['message'];
+    $context['message'] = t("Repo updated @name with message @message", array('@name' => $repo_array['repo_name'], '@message' => $output['message']));
 
 }
 
@@ -180,7 +236,7 @@ function _github_editor_build_table_group_rows($rows) {
         $output[$value['id']]['repo_url'] = $value['repo_url'];
         $gid = $value['gid'];
         //@todo not find the right og api call for this
-        $node = node_load(og_membership_load($gid)->etid)->title;
+        $node = node_load($gid)->title;
         $output[$value['id']]['group_name'] = $node;
         $output[$value['id']]['active'] = $value['active'];
         $output[$value['id']]['#attributes'] = array('class' => array($value['repo_name']));

@@ -71,7 +71,7 @@ function github_behat_editor_repos_form($form, &$form_state) {
 
     $existing_repos_formatted = array();
     if($type == 'group') {
-        $existing_repos = $client->getGroupRepos($user->uid);
+        $existing_repos = $client->getGroupRepos(array('uid' => $user->uid));
     } else {
         $existing_repos = $client->getUserRepos($user->uid);
     }

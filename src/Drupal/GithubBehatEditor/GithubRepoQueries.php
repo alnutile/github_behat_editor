@@ -38,6 +38,21 @@ class GithubRepoQueries {
         return array('results' => $rows, 'error' => 0);
     }
 
+    public function selectAllById(array $repo_ids){
+        $query = db_select('github_behat_editor_repos', 'r');
+        $query->fields('r');
+        $query->condition('r.id', $repo_ids, 'IN');
+        $query->orderBy('r.id', 'DESC');
+        $result = $query->execute();
+        $rows = array();
+        if ($result) {
+            foreach ($result as $record) {
+                $rows[] = (array) $record;
+            }
+        }
+        return array('results' => $rows, 'error' => 0);
+    }
+
     public function selectAllByGid(array $gids){
         $query = db_select('github_behat_editor_repos', 'r');
         $query->fields('r');
