@@ -232,7 +232,6 @@ class GitActions {
      *    full url to clone the repo from
      */
     public function gitClone(array $params){
-        dpm($params);
         $current = (isset($params['use_current_path']) && $params['use_current_path'] == TRUE) ? '.' : '';
         exec("cd {$params['destination']} && $this->git_path clone {$params['full_repo_path']} $current", $output, $return_val);
         return array('response' => $output, 'error' => $return_val);
