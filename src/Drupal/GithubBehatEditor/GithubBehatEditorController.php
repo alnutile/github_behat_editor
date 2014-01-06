@@ -288,6 +288,29 @@ class GithubBehatEditorController {
         return $this->user_and_group_repos;
     }
 
+    public function getReposByRepoGroupIdAndRepoName($gid, $name, $keyed_by_name = TRUE) {
+        $repos = $this->repo_manager->getGroupReposByGidAndName($gid, $name);
+        $this->repos = $repos['results'];
+        if($keyed_by_name) {
+            $this->user_and_group_repos = $this->keyReposByName();
+        } else {
+            $this->user_and_group_repos = $this->repos;
+        }
+        return $this->user_and_group_repos;
+    }
+
+    public function getReposByRepoUserIdAndRepoName($uid, $name, $keyed_by_name = TRUE) {
+        $repos = $this->repo_manager->getUsersReposByUidAndName($uid, $name);
+        $this->repos = $repos['results'];
+
+        if($keyed_by_name) {
+            $this->user_and_group_repos = $this->keyReposByName();
+        } else {
+            $this->user_and_group_repos = $this->repos;
+        }
+        return $this->user_and_group_repos;
+    }
+
     public function getUsersGroupRepoByGid(array $gid){
         $repos = $this->repo_manager->getGroupReposByGid($gid);
         return $repos['results'];
@@ -342,6 +365,64 @@ class GithubBehatEditorController {
                 $file_data[$array_key] = $file->getFile();
             }
             $this->files_array_alter[$value['repo_name']] = $file_data;
+        }
+    }
+
+    public function setRepoArrayForUserFromGid(array $params) {
+        list($repo_array, $uid, $repo_name) = $params;
+        if(empty($repo_array)) {
+            $perms = new BehatEditor\BehatPermissions($uid);
+            $groups = $perms->getGroupIDs();
+            if(!empty($groups)){
+                $repo_array_groups = $this->getReposByRepoGroupId($groups);
+                while(empty($repo_array)) {
+                    foreach($repo_array_groups as $key => $value) {
+                        if($key == $repo_name) {
+                            $value['gid'] = 0;
+                            $repo_array = array($value);
+                        }
+                    }
+                }
+            }
+        }
+        return $repo_array;
+    }
+
+    public function updateFileShow(array $params, &$data) {
+        list($repo_array) = $params;
+        if(!empty($repo_array)) {
+            $repo_array = array_pop($repo_array);
+            $path = $this->get_full_path_using_repo_query_results(array('repo_array' => $repo_array));
+            if ( !$this->checkIfFolderExists(array('repo_array' => $repo_array)) ) {
+                $path = $this->getFullPath(array('repo_array' => $repo_array));
+                $output = $this->setFolderForGit( array('full_path' => $path) );
+            }
+
+            if ( !$this->checkIfGitFolderExists(array('repo_array' => $repo_array)) ) {
+                //do a git clone in this folder
+                $repo_url = $this->buildAuthGitUrl(array('repo_array' => $repo_array));
+                $this->cloneRepo(array('destination' => $path, 'use_current_path' => TRUE, 'full_repo_path' => $repo_url));
+            } else {
+                $this->checkIfDirty(array('full_path' => $path));
+                $test_folder = $path . '/' . $repo_array['folder'];
+                $output = $this->simplePull(array('full_path' => $test_folder));
+            }
+            if($output['message'] != 'Already up-to-date.' && $output['error'] != 1) {
+                $action = arg(2);
+                drupal_set_message("Updating file based on latest github info");
+                $file = new BehatEditor\FileController();
+                $filename = array_pop(arg());
+                $module = arg(3);
+                $service_path = array_slice(arg(), 3, count(arg()));
+                $params = array(
+                    'service_path' => $service_path,
+                    'module' => $module,
+                    'filename' => $filename,
+                    'action' => $action
+                );
+                $data = $file->show($params);
+            }
+            return $output;
         }
     }
 
