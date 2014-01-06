@@ -44,20 +44,6 @@ function drush_github_behat_editor_github_behat_setup() {
     }
 
     composer_manager_register_autoloader();
-    $public = file_build_uri('/behat_github/');
-    $public = drupal_realpath($public);
-    $full_path = $public . '/users/' . $uid . '/aaaa_test/tests/' . $filename;
-    _setup_new_test_file($full_path);
-
-    $public = file_build_uri('/behat_github/');
-    $public = drupal_realpath($public);
-    $full_path = $public . '/users/' . $uid . '/bbbbb_test/tests/' . $filename;
-    _setup_new_test_file($full_path);
-
-    $public = file_build_uri('/behat_github/');
-    $public = drupal_realpath($public);
-    $full_path = $public . '/groups/3/bbbbb_test/tests/' . $filename;
-    _setup_new_test_file($full_path);
 
     $public = file_build_uri('/behat_tests/');
     $public = drupal_realpath($public);

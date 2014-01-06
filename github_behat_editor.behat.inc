@@ -14,6 +14,7 @@ use Behat\Behat\Context\BehatContext;
 class GithubBehatSubContext extends BehatContext implements DrupalSubContextInterface {
 
     public function __construct(){
+
     }
 
     /**
@@ -30,4 +31,11 @@ class GithubBehatSubContext extends BehatContext implements DrupalSubContextInte
         //@todo need to work this
         return TRUE;
     }
+
+//    /** @AfterSuite */
+//    public static function teardown($event)
+//    {
+//        var_dump("This is triggered");
+//        var_dump($event->drush);
+//    }
 }
