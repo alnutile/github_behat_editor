@@ -224,10 +224,29 @@ function github_behat_editor_behat_editor_edit_alter(&$data) {
          * 1. Make sure if the urls is groups we switch to the users path
          * 2. Check if the user is in the group
          * 3. Check if the group or user even has access to this repo
+         * 4. Finally update the file to the latest one
          */
-        $github_load = new GithubBehatEditor\GithubBehatEditorController();
-        $github_load->checkAccess(array('data' => $data, 'mode' => 'edit', 'arg' => arg()));
-        $github_load->redirectFromGroupToUserRepo(array('data' => $data, 'mode' => 'edit', 'arg' => arg()));
+        $repo_action = new GithubBehatEditor\GithubBehatEditorController();
+        $repo_action->checkAccess(array('data' => $data, 'mode' => 'edit', 'arg' => arg()));
+        $repo_action->redirectFromGroupToUserRepo(array('data' => $data, 'mode' => 'edit', 'arg' => arg()));
+        $repo_array = array();
+        $output = array();
+        $path = explode('/', $data['action_path']);
+        if($path[2] == 'groups') {
+            $gid = $path[3];
+            $repo_name = $path[4];
+            $repo_array = $repo_action->getReposByRepoGroupIdAndRepoName($gid, $repo_name);
+        } elseif($path[2] == 'users') {
+            $uid = $path[3];
+            $repo_name = $path[4];
+            $repo_array = $repo_action->getReposByRepoUserIdAndRepoName($uid, $repo_name);
+            $repo_array = $repo_action->setRepoArrayForUserFromGid(array($repo_array, $uid, $repo_name));
+        }
+        $output = $repo_action->updateFileShow(array($repo_array), $data);
+        $message_type = 'status';
+        if($output['error'] == 1) { $message_type = 'error '; }
+        drupal_set_message("Git File Message:  " . $output['message'], $type = $message_type);
+
     }
 }
 
@@ -271,6 +290,41 @@ function github_behat_editor_behat_editor_after_create_alter(&$data) {
             drupal_set_message(t('Error processing file !error', array('!error' => $results['message'])));
             $data['messages'][] =  t('Error adding file to the repo file !error', array('!error' => $results['message']));
         }
+
+        if(!empty($repo_array)) {}
+    }
+}
+
+
+/**
+ * Alter the show hook_behat_editor_show()
+ *
+ * Update the file before the user views it.
+ * Figure out if it is a group or user file
+ * and then update it from the correct repo
+ *
+ */
+
+function github_behat_editor_behat_editor_view_alter(&$data) {
+    if($data['module'] == 'behat_github') {
+        $repo_array = array();
+        $output = array();
+        $repo_action = new GithubBehatEditor\GithubBehatEditorController();
+        $path = explode('/', $data['action_path']);
+        if($path[2] == 'groups') {
+            $gid = $path[3];
+            $repo_name = $path[4];
+            $repo_array = $repo_action->getReposByRepoGroupIdAndRepoName($gid, $repo_name);
+        } elseif($path[2] == 'users') {
+            $uid = $path[3];
+            $repo_name = $path[4];
+            $repo_array = $repo_action->getReposByRepoUserIdAndRepoName($uid, $repo_name);
+            $repo_array = $repo_action->setRepoArrayForUserFromGid(array($repo_array, $uid, $repo_name));
+        }
+        $output = $repo_action->updateFileShow(array($repo_array), $data);
+        $message_type = 'status';
+        if($output['error'] == 1) { $message_type = 'error '; }
+        drupal_set_message("Git File Message:  " . $output['message'], $type = $message_type);
     }
 }
 
