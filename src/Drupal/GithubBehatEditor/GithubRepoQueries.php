@@ -84,6 +84,24 @@ class GithubRepoQueries {
         return array('results' => $rows, 'error' => 0);
     }
 
+
+    public function selectAllByUserIDAndRepoName($uid, $repo_name){
+        $query = db_select('github_behat_editor_repos', 'r');
+        $query->fields('r');
+        $query->condition('r.uid', $uid, '=');
+        $query->condition('r.gid', '0', '=');
+        $query->condition('r.repo_name', $repo_name, '=');
+        $query->orderBy('r.id', 'DESC');
+        $result = $query->execute();
+        $rows = array();
+        if ($result) {
+            foreach ($result as $record) {
+                $rows[] = (array) $record;
+            }
+        }
+        return array('results' => $rows, 'error' => 0);
+    }
+
     public function insertRepo($params) {
         $insert = db_insert('github_behat_editor_repos')->fields($params)->execute();
         return $insert;

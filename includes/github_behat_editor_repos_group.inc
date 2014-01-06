@@ -109,11 +109,6 @@ function _github_behat_editor_batch_groups_repos_update($params){
     global $user;
     $group_repos = new GithubBehatEditor\GithubBehatEditorController($user);
     $group_repos = $group_repos->getReposByRepoTableId($params['chosen'], $keyed_by_name = TRUE);
-    //foreach group repos
-    //find users in those groups
-    //then add to the group_repos array more repos
-    //but based on the user id path
-    //setting the gid to 0 will help
     _github_behat_editor_merge_user_paths($group_repos);
     $total = count($group_repos);
     $count = 1;

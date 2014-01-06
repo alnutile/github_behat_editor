@@ -127,6 +127,20 @@ class RepoModel {
         return array('results' => $records, 'error' => $results['error']);
     }
 
+    public function getGroupReposByGidAndName($gid, $name){
+        $queryRepos = new GithubRepoQueries();
+        $results = $queryRepos->selectAllByGidAndRepoName($gid, $name);
+        $records = $results['results'];
+        return array('results' => $records, 'error' => $results['error']);
+    }
+
+    public function getUsersReposByUidAndName($uid, $name){
+        $queryRepos = new GithubRepoQueries();
+        $results = $queryRepos->selectAllByUserIDAndRepoName($uid, $name);
+        $records = $results['results'];
+        return array('results' => $records, 'error' => $results['error']);
+    }
+
     public function getGroupRepo($params){
         $this->gid = $params['gid'];
         $this->repo_name = $params['repo_name'];
