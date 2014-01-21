@@ -253,7 +253,7 @@ function github_behat_editor_behat_editor_edit_alter(&$data) {
 
 function _github_behat_editor_redirect_to_user_path(){
     global $user;
-    if($user->uid != arg(5)) {
+    if(arg(4) == 'users' && $user->uid != arg(5)) {
         $path = arg();
         $path[5] = $user->uid;
         drupal_goto(implode('/', $path));
