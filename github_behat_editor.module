@@ -226,6 +226,7 @@ function github_behat_editor_behat_editor_edit_alter(&$data) {
          * 3. Check if the group or user even has access to this repo
          * 4. Finally update the file to the latest one
          */
+        _github_behat_editor_redirect_to_user_path();
         $repo_action = new GithubBehatEditor\GithubBehatEditorController();
         $repo_action->checkAccess(array('data' => $data, 'mode' => 'edit', 'arg' => arg()));
         $repo_action->redirectFromGroupToUserRepo(array('data' => $data, 'mode' => 'edit', 'arg' => arg()));
@@ -247,6 +248,15 @@ function github_behat_editor_behat_editor_edit_alter(&$data) {
         if($output['error'] == 1) { $message_type = 'error '; }
         drupal_set_message("Git File Message:  " . $output['message'], $type = $message_type);
 
+    }
+}
+
+function _github_behat_editor_redirect_to_user_path(){
+    global $user;
+    if($user->uid != arg(5)) {
+        $path = arg();
+        $path[5] = $user->uid;
+        drupal_goto(implode('/', $path));
     }
 }
 
