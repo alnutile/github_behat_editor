@@ -77,9 +77,11 @@ class GithubBehatEditorController {
             $this->checkGroupRequest();
             $this->checkGroupRepoAccess();
         }
-        //if groups check user access to group and repo
-
-        //if users check users access to repo
+        //@TODO right now there is a redirect to keep a user on their
+        //  own pages. But this could help as well.
+        //  check for user repos
+        //  check for users groups repos
+        //  if no match redirect
     }
 
     protected function checkGroupRequest(){
@@ -299,6 +301,17 @@ class GithubBehatEditorController {
         return $this->user_and_group_repos;
     }
 
+    public function getRepoByRepoName($name, $keyed_by_name = TRUE) {
+        $repos = $this->repo_manager->getRepoByRepoName($name);
+        $this->repos = $repos['results'];
+        if($keyed_by_name) {
+            $this->user_and_group_repos = $this->keyReposByName();
+        } else {
+            $this->user_and_group_repos = $this->repos;
+        }
+        return $this->user_and_group_repos;
+    }
+
     public function getReposByRepoUserIdAndRepoName($uid, $name, $keyed_by_name = TRUE) {
         $repos = $this->repo_manager->getUsersReposByUidAndName($uid, $name);
         $this->repos = $repos['results'];
@@ -388,7 +401,8 @@ class GithubBehatEditorController {
         return $repo_array;
     }
 
-    public function updateFileShow(array $params, &$data) {
+
+    public function updateFiles(array $params) {
         list($repo_array) = $params;
         if(!empty($repo_array)) {
             $repo_array = array_pop($repo_array);
@@ -407,7 +421,12 @@ class GithubBehatEditorController {
                 $test_folder = $path . '/' . $repo_array['folder'];
                 $output = $this->simplePull(array('full_path' => $test_folder));
             }
-            if($output['message'] != 'Already up-to-date.' && $output['error'] != 1) {
+
+            return $output;
+        }
+    }
+
+    public function updateFileShow(&$data) {
                 $action = arg(2);
                 drupal_set_message("Updating file based on latest github info");
                 $file = new BehatEditor\FileController();
@@ -421,9 +440,6 @@ class GithubBehatEditorController {
                     'action' => $action
                 );
                 $data = $file->show($params);
-            }
-            return $output;
-        }
     }
 
 
