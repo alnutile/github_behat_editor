@@ -1,3 +1,9 @@
+v1.5.2.1
+-----------------
+Hotfix:
+Clone to Repo and Add to Repo was not using the current user id so it was not working for other users.
+It now pulls in the current user to that list 
+
 v0.1.0
 ------------------
 First release of module
