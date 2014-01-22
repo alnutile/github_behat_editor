@@ -131,8 +131,9 @@ function github_behat_editor_form_alter(&$form, &$form_state) {
                 ($value['gid'] == 0) ? $type = 'users' : $type = 'groups';
                 ($value['gid'] == 0) ? $id = $value['uid'] : $id = $value['gid'];
                 //For right now force into user folder they really should all be set as needed.
+                //$value['uid'] was being passed needs to be dyanmic user $user->uid see BPFD-298
                 $links[] = array(
-                                    'data' =>l($value['repo_name'], "behat_github/users/{$value['uid']}/{$value['repo_name']}/{$value['folder']}", array('attributes' => array('id' => $value['repo_name']))),
+                                    'data' =>l($value['repo_name'], "behat_github/users/{$user->uid}/{$value['repo_name']}/{$value['folder']}", array('attributes' => array('id' => $value['repo_name']))),
                                     'class' => array($value['repo_name'])
                                 );
             }
@@ -166,7 +167,8 @@ function github_behat_editor_form_alter(&$form, &$form_state) {
                 ($value['gid'] == 0) ? $type = 'users' : $type = 'groups';
                 ($value['gid'] == 0) ? $id = $value['uid'] : $id = $value['gid'];
                 //For right now force into user folder they really should all be set as needed.
-                $links[] = l($value['repo_name'], "behat_github/users/{$value['uid']}/{$value['repo_name']}/{$value['folder']}");
+                //See BPFD-298 this was using value['uid'] but needed to user the user logged in
+                $links[] = l($value['repo_name'], "behat_github/users/{$user->uid}/{$value['repo_name']}/{$value['folder']}");
             }
 
             $list = theme('item_list', array('items' => $links, 'attributes' => array('class' => array('dropdown-menu'), 'role' => 'menu')));
