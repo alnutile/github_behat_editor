@@ -1,3 +1,9 @@
+v1.5.3
+----------------
+Fix the View and Edit alter to work for other users in the group.
+Was not not considering that file missing and file_object being null
+ 
+
 v1.5.2.1
 -----------------
 Hotfix:
