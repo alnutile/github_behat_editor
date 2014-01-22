@@ -224,6 +224,13 @@ function _github_behat_editor_redirect_to_user_path(){
         $path[5] = $user->uid;
         drupal_goto(implode('/', $path));
     }
+
+    if(arg(4) == 'groups' && arg(2) == 'edit') {
+        $path = arg();
+        $path[4] = 'users';
+        $path[5] = $user->uid;
+        drupal_goto(implode('/', $path));
+    }
 }
 
 
