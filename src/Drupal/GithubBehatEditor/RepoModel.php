@@ -134,6 +134,14 @@ class RepoModel {
         return array('results' => $records, 'error' => $results['error']);
     }
 
+    public function getRepoByRepoName($name){
+        $queryRepos = new GithubRepoQueries();
+        $results = $queryRepos->selectAllByRepoName($name);
+        $records = $results['results'];
+        return array('results' => $records, 'error' => $results['error']);
+    }
+
+
     public function getUsersReposByUidAndName($uid, $name){
         $queryRepos = new GithubRepoQueries();
         $results = $queryRepos->selectAllByUserIDAndRepoName($uid, $name);
