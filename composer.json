@@ -15,7 +15,7 @@
     "repositories": [
         {
             "type": "git",
-            "url": "https://github.com/teqneers/PHP-Stream-Wrapper-for-Git"
+            "url": "https://github.com/alnutile/PHP-Stream-Wrapper-for-Git"
         }
     ],
     "autoload": {

@@ -167,7 +167,7 @@ class GitActions {
         $this->git->add(array($this->full_path_to_file));
         //@todo work gitPull and gitPush into here
         if($this->git->isDirty()) {
-            $this->git->commit("Commit via behat editor by $user->name", array($this->full_path_to_file), $author = null);
+            $this->git->commit("Commit via behat editor by $user->name", array($this->full_path_to_file), $author = null, array('-i'));
             exec("cd $this->full_path_to_file_folder && git pull", $output, $return_var);
             if($return_var == 1) {
                 $message = implode("\n", $output);
