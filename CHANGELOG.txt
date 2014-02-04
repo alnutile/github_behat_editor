@@ -1,3 +1,7 @@
+v1.5.6
+---------------
+Hotfix on the -i attr for git commit to see if that helps with stalled commits https://github.com/alnutile/PHP-Stream-Wrapper-for-Git
+
 v1.5.3
 ----------------
 Fix the View and Edit alter to work for other users in the group.
