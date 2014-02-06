@@ -132,7 +132,7 @@ class GitActions {
         $this->full_path_to_file_folder = $this->data['absolute_path'];
         $this->git = Repository::open($this->full_path_to_repo_folder, $this->git_path);
         $this->git->add(array($this->full_path_to_file));
-        $this->git->commit("Commit via behat editor by $user->name", array($this->full_path_to_file), $author = null);
+        $this->git->commit("Commit via behat editor by $user->name", array($this->full_path_to_file), $author = null, array('-i'));
         exec("cd $this->full_path_to_file_folder && git pull", $output, $return_var);
         //@todo work gitPull and gitPush into here
         if($return_var == 1) {
@@ -202,7 +202,7 @@ class GitActions {
         $this->full_path_to_repo_folder = $full_path_to_repo_folder;
         $this->git = Repository::open($this->full_path_to_repo_folder, $this->git_path);
         $this->git->add($files);
-        $this->git->commit("Commit via behat editor by $user->name $message", NULL, $author = null);
+        $this->git->commit("Commit via behat editor by $user->name $message", NULL, $author = null, array('-i'));
         $results = $this->gitPull();
         if($results['error'] == 1) {
             return array('error' => 1, 'message' => $results['message']);
