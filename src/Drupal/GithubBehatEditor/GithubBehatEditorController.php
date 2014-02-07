@@ -34,6 +34,7 @@ class GithubBehatEditorController {
     public $files_array = array();
     public $files_array_alter = array();
     public $user_and_group_repos = array();
+    public $repoClass;
 
 
     public function __construct($params = array()) {
@@ -541,7 +542,45 @@ class GithubBehatEditorController {
         $path = $params['full_path'];
         exec("cd $path && git pull", $output, $return_var);
         return array('message' => implode("\n", $output), 'error' => $return_var);
+    }
+
+    public function simplePush(array $params) {
+        $path = $params['full_path'];
+        exec("cd $path && git push", $output, $return_var);
+        return array('message' => "Git Simple Push " . implode("\n", $output), 'error' => $return_var);
+    }
+
+    public function simpleAdd(array $params) {
+        $path = $params['full_path'];
+        $git = Repository::open($path);
+        try {
+            $git->add();
+            $output = $git->getLog(1, 0);
+            return array('message' => "Git Simple Add " . $output, 'error' => 0);
+        }
+
+        catch(\Exception $e){
+            return array('message' => "Git Simple Add " . $e, 'error' => 1);
+        }
 
     }
 
+    public function simpleCommit(array $params) {
+        global $user;
+        $path = $params['full_path'];
+        $git = Repository::open($path);
+        if($git->isDirty()) {
+            try {
+                $git->commit("Commit via behat editor by $user->name", array($path), $author = null, array('-i'));
+                $output = $git->getLog(1, 0);
+                return array('message' => "Git Simple Commit " . $output, 'error' => 0);
+            }
+                catch(\Exception $e) {
+                return array('message' => "Git Simple Commit " . $e, 'error' => 1);
+            }
+        } else {
+            return array('message' => "Git Simple Commit isDirty returned FALSE", 'error' => 0);
+        }
+
+    }
 }
