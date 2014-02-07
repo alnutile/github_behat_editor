@@ -1,3 +1,9 @@
+v1.5.7
+-------------
+Rework view mode to do more git pull and pushes the user can use it in conjunction of Github Editor
+to run tests.
+
+
 v1.5.6
 ---------------
 Hotfix on the -i attr for git commit to see if that helps with stalled commits https://github.com/alnutile/PHP-Stream-Wrapper-for-Git
