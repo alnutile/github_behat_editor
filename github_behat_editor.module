@@ -83,8 +83,8 @@ function github_behat_editor_menu() {
         'file' => 'github_behat_editor_repos_manage.inc',
     );
 
-    $items['admin/behat/github/sync/%/%'] =  array(
-        'access arguments' => array('behat admin settings'),
+    $items['admin/behat/github/sync'] =  array(
+        'access arguments' => array('behat edit test'),
         'type' => MENU_CALLBACK,
         'page callback' => 'github_behat_editor_repo_sync',
         'page arguments' => array(4,5),
@@ -92,8 +92,32 @@ function github_behat_editor_menu() {
     return $items;
 }
 
-function github_behat_editor_repo_sync($user_id, $repo_name) {
-     $filepath = $_REQUEST['filepath'];
+function github_behat_editor_repo_sync() {
+    composer_manager_register_autoloader();
+    $current_url = $_REQUEST['current_url'];
+    $repo_path = array_slice(explode('/', $current_url), 4, 4);
+
+    $repo_path = implode('/', $repo_path);
+    $public = file_build_uri('/' . $repo_path);
+    $repo_path = drupal_realpath($public);
+
+    $repo_action = new GithubBehatEditor\GithubBehatEditorController();
+
+    drupal_set_message("0", "This is the results of the sync");
+    $output = $repo_action->manualAdd(array('full_path' => $repo_path));
+    _github_behat_editor_set_message($output['error'], "Manual Git Add Message:  " . $output['message']);
+
+    $output = $repo_action->manualCommit(array('full_path' => $repo_path));
+    _github_behat_editor_set_message($output['error'], "Manual Git Commit Message:  " . $output['message']);
+
+    $output = $repo_action->simplePull(array('full_path' => $repo_path));
+    _github_behat_editor_set_message($output['error'], "Manual Git Pull  Message:  " . $output['message']);
+
+    $output = $repo_action->simplePush(array('full_path' => $repo_path));
+    _github_behat_editor_set_message($output['error'], "Manual Git File Message:  " . $output['message']);
+
+    drupal_json_output("The page will reload now that the sync is done");
+    exit();
 }
 
 function github_behat_editor_form_alter(&$form, &$form_state) {
@@ -109,16 +133,6 @@ function github_behat_editor_form_alter(&$form, &$form_state) {
             $edit_path[2] = 'edit';
             $edit_path = implode('/', $edit_path);
             $form['actions']['edit_test'] = github_edit_test_array($edit_path);
-        }
-
-        /**
-         * Edit Form
-         */
-        if($is_github == 'behat_github' && $form['#id'] == 'behat-editor-edit-form') {
-//            $edit_path = arg();
-//            $edit_path[2] = 'edit';
-//            $edit_path = implode('/', $edit_path);
-//            unset($form['actions']['delete_test']);
         }
 
         /**
@@ -189,7 +203,15 @@ function github_behat_editor_form_alter(&$form, &$form_state) {
                 '#prefix' => '<div class="btn-group gitrepo-choose">',
                 '#suffix' => $list . '</div>'
             );
+
+            if(arg(3) == 'behat_github') {
+                $form['actions']['github_sync'] = array(
+                    '#markup' => "<a href='#' class='btn btn-default sync-button'>Sync Repo</a>",
+                );
+            }
+
             $form['#attached']['js']['github_behat_editor_add'] = $path . '/js/github_behat_editor_clone.js';
+            $form['#attached']['js']['github_behat_editor_add'] = $path . '/js/github_behat_editor_app.js';
             $form['#attached']['css']['github_behat_editor_add'] = $path . '/css/github_behat_editor_app.css';
 
         }

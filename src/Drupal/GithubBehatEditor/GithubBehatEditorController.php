@@ -538,6 +538,20 @@ class GithubBehatEditorController {
         }
     }
 
+    public function manualCommit(array $params) {
+        $path = $params['full_path'];
+        global $user;
+        exec("cd $path && git commit -m 'Manual Commmit by Sync button user " + $user->mail + "'", $output, $return_var);
+        return array('message' => implode("\n", $output), 'error' => $return_var);
+    }
+
+    public function manualAdd(array $params) {
+        $path = $params['full_path'];
+        exec("cd $path && git pull", $output, $return_var);
+        return array('message' => implode("\n", $output), 'error' => $return_var);
+    }
+
+
     public function simplePull(array $params) {
         $path = $params['full_path'];
         exec("cd $path && git pull", $output, $return_var);
@@ -556,11 +570,12 @@ class GithubBehatEditorController {
         try {
             $git->add();
             $output = $git->getLog(1, 0);
-            return array('message' => "Git Simple Add " . $output, 'error' => 0);
+
+            return array('message' => "Git Simple Add " . implode("\n", $output), 'error' => 0);
         }
 
         catch(\Exception $e){
-            return array('message' => "Git Simple Add " . $e, 'error' => 1);
+            return array('message' => "Git Simple Add Error " . $e, 'error' => 1);
         }
 
     }
