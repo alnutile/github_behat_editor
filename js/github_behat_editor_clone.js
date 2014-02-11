@@ -33,7 +33,7 @@
                 var data = Drupal.behat_editor.action('POST', token, parameters, url);
                 console.log(data);
                 if(data.error == 0) {
-                    window.location.replace("/admin/behat/edit/" + path_with_file);
+                    window.location.replace("/admin/behat/view/" + path_with_file);
                 }
                 Drupal.behat_editor.renderMessage(data);
             });

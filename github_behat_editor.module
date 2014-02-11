@@ -83,7 +83,41 @@ function github_behat_editor_menu() {
         'file' => 'github_behat_editor_repos_manage.inc',
     );
 
+    $items['admin/behat/github/sync'] =  array(
+        'access arguments' => array('behat edit test'),
+        'type' => MENU_CALLBACK,
+        'page callback' => 'github_behat_editor_repo_sync',
+        'page arguments' => array(4,5),
+    );
     return $items;
+}
+
+function github_behat_editor_repo_sync() {
+    composer_manager_register_autoloader();
+    $current_url = $_REQUEST['current_url'];
+    $repo_path = array_slice(explode('/', $current_url), 4, 4);
+
+    $repo_path = implode('/', $repo_path);
+    $public = file_build_uri('/' . $repo_path);
+    $repo_path = drupal_realpath($public);
+
+    $repo_action = new GithubBehatEditor\GithubBehatEditorController();
+
+    drupal_set_message("0", "This is the results of the sync");
+    $output = $repo_action->manualAdd(array('full_path' => $repo_path));
+    _github_behat_editor_set_message($output['error'], "Manual Git Add Message:  " . $output['message']);
+
+    $output = $repo_action->manualCommit(array('full_path' => $repo_path));
+    _github_behat_editor_set_message($output['error'], "Manual Git Commit Message:  " . $output['message']);
+
+    $output = $repo_action->simplePull(array('full_path' => $repo_path));
+    _github_behat_editor_set_message($output['error'], "Manual Git Pull  Message:  " . $output['message']);
+
+    $output = $repo_action->simplePush(array('full_path' => $repo_path));
+    _github_behat_editor_set_message($output['error'], "Manual Git File Message:  " . $output['message']);
+
+    drupal_json_output("The page will reload now that the sync is done");
+    exit();
 }
 
 function github_behat_editor_form_alter(&$form, &$form_state) {
@@ -99,16 +133,6 @@ function github_behat_editor_form_alter(&$form, &$form_state) {
             $edit_path[2] = 'edit';
             $edit_path = implode('/', $edit_path);
             $form['actions']['edit_test'] = github_edit_test_array($edit_path);
-        }
-
-        /**
-         * Edit Form
-         */
-        if($is_github == 'behat_github' && $form['#id'] == 'behat-editor-edit-form') {
-//            $edit_path = arg();
-//            $edit_path[2] = 'edit';
-//            $edit_path = implode('/', $edit_path);
-//            unset($form['actions']['delete_test']);
         }
 
         /**
@@ -179,7 +203,15 @@ function github_behat_editor_form_alter(&$form, &$form_state) {
                 '#prefix' => '<div class="btn-group gitrepo-choose">',
                 '#suffix' => $list . '</div>'
             );
+
+            if(arg(3) == 'behat_github') {
+                $form['actions']['github_sync'] = array(
+                    '#markup' => "<a href='#' class='btn btn-default sync-button'>Sync Repo</a>",
+                );
+            }
+
             $form['#attached']['js']['github_behat_editor_add'] = $path . '/js/github_behat_editor_clone.js';
+            $form['#attached']['js']['github_behat_editor_add'] = $path . '/js/github_behat_editor_app.js';
             $form['#attached']['css']['github_behat_editor_add'] = $path . '/css/github_behat_editor_app.css';
 
         }
@@ -357,15 +389,45 @@ function github_behat_editor_behat_editor_before_view_alter(&$data) {
             $repo_array[$repo_name]['uid'] = $id;
             $repo_array[$repo_name]['gid'] = '0';
         }
-        $output = $repo_action->updateFiles(array($repo_array));
 
-        $message_type = 'status';
-        if($output['error'] == 1) { $message_type = 'error '; }
-        drupal_set_message("Git File Message:  " . $output['message'], $type = $message_type);
+        $repo_array_one = array_pop($repo_array);
+        $path = $repo_action->get_full_path_using_repo_query_results(array('repo_array' => $repo_array_one));
 
+        $output = $repo_action->checkIfFolderExists(array('repo_array' => $repo_array_one));
+        _github_behat_editor_set_message($output['error'], "Git Check Folder Exists Message:  " . $output['message']);
+
+        if($output === FALSE) {
+            $output = $repo_action->setFolderForGit( array('full_path' => $path) );
+            _github_behat_editor_set_message($output['error'], "Git Set Folder Message:  " . $output['message']);
+        }
+
+        if ( !$repo_action->checkIfGitFolderExists(array('repo_array' => $repo_array_one)) ) {
+            $repo_url = $this->buildAuthGitUrl(array('repo_array' => $repo_array));
+            $output = $this->cloneRepo(array('destination' => $path, 'use_current_path' => TRUE, 'full_repo_path' => $repo_url));
+            _github_behat_editor_set_message($output['error'], "Git Build git folder Message:  " . $output['response']);
+
+        } else {
+            $output = $repo_action->simpleAdd(array('full_path' => $path));
+            _github_behat_editor_set_message($output['error'], "Git Add Message:  " . $output['message']);
+
+            $output = $repo_action->simpleCommit(array('full_path' => $path));
+            _github_behat_editor_set_message($output['error'], "Git Commit Message:  " . $output['message']);
+
+            $output = $repo_action->simplePull(array('full_path' => $path));
+            _github_behat_editor_set_message($output['error'], "Git Pull  Message:  " . $output['message']);
+
+            $output = $repo_action->simplePush(array('full_path' => $path));
+            _github_behat_editor_set_message($output['error'], "Git File Message:  " . $output['message']);
+        }
     }
 }
 
+function _github_behat_editor_set_message($error = 0, $message = FALSE) {
+    $message_type = 'status';
+    if($error == 1) { $message_type = 'error '; }
+    drupal_set_message($message, $type = $message_type);
+    watchdog('github_editor_view_post_alter', $message, array(), WATCHDOG_NOTICE);
+}
 
 /**
  * Alter the show hook_behat_editor_show()
