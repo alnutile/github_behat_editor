@@ -83,7 +83,17 @@ function github_behat_editor_menu() {
         'file' => 'github_behat_editor_repos_manage.inc',
     );
 
+    $items['admin/behat/github/sync/%/%'] =  array(
+        'access arguments' => array('behat admin settings'),
+        'type' => MENU_CALLBACK,
+        'page callback' => 'github_behat_editor_repo_sync',
+        'page arguments' => array(4,5),
+    );
     return $items;
+}
+
+function github_behat_editor_repo_sync($user_id, $repo_name) {
+     $filepath = $_REQUEST['filepath'];
 }
 
 function github_behat_editor_form_alter(&$form, &$form_state) {
