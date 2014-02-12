@@ -541,26 +541,26 @@ class GithubBehatEditorController {
     public function manualCommit(array $params) {
         $path = $params['full_path'];
         global $user;
-        exec("cd $path && git commit -m 'Manual Commmit by Sync button user " + $user->mail + "'", $output, $return_var);
+        exec("cd $path && git commit -i -m 'Manual Commmit by Sync button user " + $user->mail + "'", $output, $return_var);
         return array('message' => implode("\n", $output), 'error' => $return_var);
     }
 
     public function manualAdd(array $params) {
         $path = $params['full_path'];
-        exec("cd $path && git pull", $output, $return_var);
+        exec("cd $path && git add .", $output, $return_var);
         return array('message' => implode("\n", $output), 'error' => $return_var);
     }
 
 
     public function simplePull(array $params) {
         $path = $params['full_path'];
-        exec("cd $path && git pull", $output, $return_var);
+        exec("cd $path && git pull origin master", $output, $return_var);
         return array('message' => implode("\n", $output), 'error' => $return_var);
     }
 
     public function simplePush(array $params) {
         $path = $params['full_path'];
-        exec("cd $path && git push", $output, $return_var);
+        exec("cd $path && git push origin master", $output, $return_var);
         return array('message' => "Git Simple Push " . implode("\n", $output), 'error' => $return_var);
     }
 
