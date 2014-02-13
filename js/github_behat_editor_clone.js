@@ -11,7 +11,6 @@
 //                $('#githubModal').modal();
 //                e.preventDefault();
 //            });
-
             $('div.gitrepo-choose a').click(function(e){
                 $('#githubModal').modal('hide');
                 e.preventDefault();
@@ -29,9 +28,7 @@
                     "module": module,
                     "path": service_path
                 };
-
                 var data = Drupal.behat_editor.action('POST', token, parameters, url);
-                console.log(data);
                 if(data.error == 0) {
                     window.location.replace("/admin/behat/view/" + path_with_file);
                 }
