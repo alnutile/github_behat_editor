@@ -210,8 +210,8 @@ function github_behat_editor_form_alter(&$form, &$form_state) {
                 );
             }
 
-            $form['#attached']['js']['github_behat_editor_add'] = $path . '/js/github_behat_editor_clone.js';
-            $form['#attached']['js']['github_behat_editor_add'] = $path . '/js/github_behat_editor_app.js';
+            $form['#attached']['js']['github_behat_editor_clone'] = $path . '/js/github_behat_editor_clone.js';
+            $form['#attached']['js']['github_behat_editor_app'] = $path . '/js/github_behat_editor_app.js';
             $form['#attached']['css']['github_behat_editor_add'] = $path . '/css/github_behat_editor_app.css';
 
         }
