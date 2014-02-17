@@ -402,9 +402,14 @@ function github_behat_editor_behat_editor_before_view_alter(&$data) {
         }
 
         if ( !$repo_action->checkIfGitFolderExists(array('repo_array' => $repo_array_one)) ) {
-            $repo_url = $this->buildAuthGitUrl(array('repo_array' => $repo_array));
-            $output = $this->cloneRepo(array('destination' => $path, 'use_current_path' => TRUE, 'full_repo_path' => $repo_url));
-            _github_behat_editor_set_message($output['error'], "Git Build git folder Message:  " . $output['response']);
+            $repo_url = $repo_action->buildAuthGitUrl(array('repo_array' => $repo_array));
+            $output = $repo_action->cloneRepo(array('destination' => $path, 'use_current_path' => TRUE, 'full_repo_path' => $repo_url));
+            if(is_array($output['response'])) {
+                $response = implode("\n", $output['response']);
+            } else {
+                $response = $output['response'];
+            }
+            _github_behat_editor_set_message($output['error'], "Git Build git folder Message:  " . $response);
 
         } else {
             $output = $repo_action->simpleAdd(array('full_path' => $path));
@@ -572,4 +577,42 @@ function _github_behat_editor_setup_repos($params) {
         $output = $repo_action->simplePull(array('full_path' => $test_folder));
         drupal_set_message(t("Updated Group repo !repo for user !message", array('!repo' => $repo_array['repo_name'], '!message' => $output['message'])), $type = 'info');
     }
+}
+
+
+/**
+ * Alter the token save so we add the token on update
+ */
+
+function github_behat_editor_behat_editor_takenizer_post_update_alter(&$data) {
+    if ( strpos($data['filepath'], 'behat_github') !== FALSE) {
+        _github_behat_editor_update_token($data['filepath']);
+    }
+}
+
+/**
+ * Alter the token save so we add the token on create
+ */
+function github_behat_editor_behat_editor_takenizer_post_create_alter(&$data) {
+    if ( strpos($data['filepath'], 'behat_github') !== FALSE) {
+        _github_behat_editor_update_token($data['filepath']);
+    }
+}
+
+function _github_behat_editor_update_token($data) {
+        $path = explode("/", $data);
+        $path = array_slice($path, 0, -1);
+        $path = implode("/", $path);
+        $repo_action = new GithubBehatEditor\GithubBehatEditorController();
+        $output = $repo_action->simpleAdd(array('full_path' => $path));
+        _github_behat_editor_set_message($output['error'], "Git Add Message:  " . $output['message']);
+
+        $output = $repo_action->simpleCommit(array('full_path' => $path));
+        _github_behat_editor_set_message($output['error'], "Git Commit Message:  " . $output['message']);
+
+        $output = $repo_action->simplePull(array('full_path' => $path));
+        _github_behat_editor_set_message($output['error'], "Git Pull  Message:  " . $output['message']);
+
+        $output = $repo_action->simplePush(array('full_path' => $path));
+        _github_behat_editor_set_message($output['error'], "Git File Message:  " . $output['message']);
 }
