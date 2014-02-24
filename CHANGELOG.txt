@@ -1,3 +1,15 @@
+v1.5.9
+-------------
+no changes
+
+v1.5.8
+------------
+force updates on view
+alnutile/github_behat_editor/commit/29daa23549a71fb5338171fa48479ef5c54fddb1#diff-f676d2c0912d4530ddeb9f8f6780acc5L402
+update tokens on create and update
+alnutile/github_behat_editor/commit/29daa23549a71fb5338171fa48479ef5c54fddb1#diff-f676d2c0912d4530ddeb9f8f6780acc5R587
+
+
 v1.5.7
 -------------
 Rework view mode to do more git pull and pushes the user can use it in conjunction of Github Editor
