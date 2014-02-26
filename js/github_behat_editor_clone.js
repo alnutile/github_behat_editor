@@ -19,17 +19,20 @@
                 var path_with_file = path.substr(1) + '/' + filename;
                 var service_path = path_with_file.split('/');
                 var scenario = $('ul.scenario:eq(0) > li').not('.ignore');
-                var scenario_array = Drupal.behat_editor.make_scenario_array(scenario);
+                var scenario_array = Drupal.behat_editor.make_scenario_array_from_view(scenario);
                 var module = 'behat_github';
                 var url = $('a#edit-clone-test').attr('href');
+                var url_args = window.location.pathname;
+                var url_args_array = url_args.split('/');
                 var parameters = {
                     "scenario": scenario_array,
                     "filename": filename,
                     "module": module,
-                    "path": service_path
+                    "path": service_path,
+                    "clone": url_args_array
                 };
                 var data = Drupal.behat_editor.action('POST', token, parameters, url);
-                if(data.error == 0) {
+                if (data.error === 0) {
                     window.location.replace("/admin/behat/view/" + path_with_file);
                 }
                 Drupal.behat_editor.renderMessage(data);
