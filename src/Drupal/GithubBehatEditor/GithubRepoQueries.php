@@ -54,15 +54,18 @@ class GithubRepoQueries {
     }
 
     public function selectAllByGid(array $gids){
-        $query = db_select('github_behat_editor_repos', 'r');
-        $query->fields('r');
-        $query->condition('r.gid', $gids, 'IN');
-        $query->orderBy('r.id', 'DESC');
-        $result = $query->execute();
-        $rows = array();
-        if ($result) {
-            foreach ($result as $record) {
-                $rows[] = (array) $record;
+        $rows = [];
+        if(!empty($gids)) {
+            $query = db_select('github_behat_editor_repos', 'r');
+            $query->fields('r');
+            $query->condition('r.gid', $gids, 'IN');
+            $query->orderBy('r.id', 'DESC');
+            $result = $query->execute();
+            $rows = array();
+            if ($result) {
+                foreach ($result as $record) {
+                    $rows[] = (array) $record;
+                }
             }
         }
         return array('results' => $rows, 'error' => 0);

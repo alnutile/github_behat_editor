@@ -9,7 +9,7 @@ use TQ\Git\Repository\Repository,
 
 class GithubBehatEditorController {
     protected $actions = array('view', 'edit', 'delete');
-    protected $repo_manager;
+    public $repo_manager;
     protected $params = array();
     protected $service_path = array();
     protected $type = '';
@@ -52,7 +52,7 @@ class GithubBehatEditorController {
     public function redirectFromGroupToUserRepo($params) {
         $this->data = $params['data'];
         $this->arg = $params['arg'];
-        $path = explode('/', $this->data['absolute_path']);
+        $path = $this->getPathFromData();
         $path_start = array_search('behat_github', $path);
         $group_or_user = $path[$path_start + 1];
         $this->action = $params['mode'];
@@ -62,13 +62,22 @@ class GithubBehatEditorController {
         }
     }
 
+    public function getPathFromData()
+    {
+        if(isset($this->data['absolute_path'])) {
+            $path = explode('/', $this->data['absolute_path']);
+        } else {
+            $path = $this->data['service_path'];
+        }
+        return $path;
+    }
     /**
      * Check Access
      */
     public function checkAccess($params){
         $this->data = $params['data'];
         $this->arg = $params['arg'];
-        $path = explode('/', $this->data['absolute_path']);
+        $path = $this->getPathFromData();
         $path_start = array_search('behat_github', $path);
         $group_or_user = $path[$path_start + 1];
         $this->action = $params['mode'];
@@ -431,9 +440,11 @@ class GithubBehatEditorController {
                 $action = arg(2);
                 drupal_set_message("Updating file based on latest github info");
                 $file = new BehatEditor\FileController();
-                $filename = array_pop(arg());
+                $arg = arg();
+                $filename = array_pop($arg);
                 $module = arg(3);
-                $service_path = array_slice(arg(), 3, count(arg()));
+                $arg = arg();
+                $service_path = array_slice($arg, 3, count(arg()));
                 $params = array(
                     'service_path' => $service_path,
                     'module' => $module,

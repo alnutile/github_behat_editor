@@ -30,6 +30,12 @@ function github_behat_editor_user_repo_settings($form, &$form_state) {
 
     $userRepos = $repos->getUserRepos($user->uid);
 
+    $userNameGithub = variable_get('github_api_username');
+    if(empty($userNameGithub)) {
+        $link = l('Admin Github API', 'admin/config/development/github_api');
+        drupal_set_message(t("You need to setup your Github account first !link", array('!link' => $link)), 'warning');
+    }
+
     $header = array(
         'id' => array('data' => t('ID')),
         'repo_name' => array('data' => t('Repo Name')),
@@ -65,17 +71,23 @@ function github_behat_editor_user_repo_settings($form, &$form_state) {
         '#submit' => array('github_behat_editor_user_repo_settings_submit'),
     );
 
-
+    if(empty($userNameGithub)) {
+        $title = "Setup Account First";
+        $link  = 'admin/config/development/github_api';
+    } else {
+        $title = 'Add New Repo';
+        $link  = "admin/behat/github_settings/repos/user/add/$user->uid";
+    }
     $build['operations']['add'] = array(
         '#type' => 'link',
-        '#href' => "admin/behat/github_settings/repos/user/add/$user->uid",
-        '#title' => t('Add New Repo'),
-        '#attributes' => array('class' => array('btn btn-md btn-success'))
+        '#href' => $link,
+        '#title' => t($title),
+        '#attributes' => array('class' => array('btn btn-success'), 'type' => 'button')
     );
 
     $build['operations']['udpate_all'] = array(
         '#type' => 'submit',
-        '#value' => 'Update and Verify all Repos <i class="glyphicon glyphicon-question-sign"></i>',
+        '#value' => 'Update and Verify all Repos',
         '#submit' => array('github_behat_editor_batch_user_repos_submit'),
         '#attributes' => array('id' => 'update-repos-users', 'container' => 'body', 'class' => array('btn btn-sm btn-danger span3'), 'data-toggle' => "tooltip", 'title' =>  t('This will verify that all repos are on the server that you have setup above'))
     );

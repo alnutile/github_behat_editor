@@ -133,6 +133,7 @@ function github_behat_editor_form_alter(&$form, &$form_state) {
             $edit_path[2] = 'edit';
             $edit_path = implode('/', $edit_path);
             $form['actions']['edit_test'] = github_edit_test_array($edit_path);
+            $form['actions']['ace_edit_test'] = github_ace_edit_test_array($edit_path);
         }
 
         /**
@@ -182,26 +183,37 @@ function github_behat_editor_form_alter(&$form, &$form_state) {
             $repos = $github_from->getallreposforuser($user);
             $links = array();
             $path = drupal_get_path('module', 'github_behat_editor');
-            foreach($repos as $key => $value){
-                $data['data-gid'] = $value['gid'];
-                $data['data-uid'] = $value['uid'];
-                $data['data-repo-name'] = $value['repo_name'];
-                $data['data-folder'] = $value['folder'];
-                $data['data-module'] = $value['repo_name'];
-                ($value['gid'] == 0) ? $type = 'users' : $type = 'groups';
-                ($value['gid'] == 0) ? $id = $value['uid'] : $id = $value['gid'];
-                //For right now force into user folder they really should all be set as needed.
-                //See BPFD-298 this was using value['uid'] but needed to user the user logged in
-                $links[] = l($value['repo_name'], "behat_github/users/{$user->uid}/{$value['repo_name']}/{$value['folder']}");
+            if(!empty($repos)) {
+                foreach($repos as $key => $value){
+                    $data['data-gid'] = $value['gid'];
+                    $data['data-uid'] = $value['uid'];
+                    $data['data-repo-name'] = $value['repo_name'];
+                    $data['data-folder'] = $value['folder'];
+                    $data['data-module'] = $value['repo_name'];
+                    ($value['gid'] == 0) ? $type = 'users' : $type = 'groups';
+                    ($value['gid'] == 0) ? $id = $value['uid'] : $id = $value['gid'];
+                    //For right now force into user folder they really should all be set as needed.
+                    //See BPFD-298 this was using value['uid'] but needed to user the user logged in
+                    $links[] = l($value['repo_name'], "behat_github/users/{$user->uid}/{$value['repo_name']}/{$value['folder']}");
+                }
+            } else {
+                $links[] = l("No Repo Setup Yet", 'admin/behat/github_settings');
             }
 
-            $list = theme('item_list', array('items' => $links, 'attributes' => array('class' => array('dropdown-menu'), 'role' => 'menu')));
+            $list = github_editor_dropdown($links);
+
             $form['actions']['github_add'] = array(
-                '#type' => "button",
-                '#value' => t('Clone to Repo<span class="caret"></span>'),
-                '#attributes' => array('type' => 'button', 'class' => array('btn', 'btn-danger', 'dropdown-toggle'), 'data-toggle' => 'dropdown'),
-                '#prefix' => '<div class="btn-group gitrepo-choose">',
-                '#suffix' => $list . '</div>'
+                '#markup' => '
+                                <div class="btn-group gitrepo-choose">
+                                  <button type="button" class="btn btn-danger dropdown-toggle" data-toggle="dropdown">
+                                    Clone to Repo
+                                  </button>
+                                  <button type="button" class="btn btn-danger dropdown-toggle" data-toggle="dropdown">
+                                    <span class="caret"></span>
+                                    <span class="sr-only">Toggle Dropdown</span>
+                                  </button>
+                                      ' . $list . '
+                                </div>'
             );
 
             if(arg(3) == 'behat_github') {
@@ -213,7 +225,6 @@ function github_behat_editor_form_alter(&$form, &$form_state) {
             $form['#attached']['js']['github_behat_editor_clone'] = $path . '/js/github_behat_editor_clone.js';
             $form['#attached']['js']['github_behat_editor_app'] = $path . '/js/github_behat_editor_app.js';
             $form['#attached']['css']['github_behat_editor_add'] = $path . '/css/github_behat_editor_app.css';
-
         }
 
         /**
@@ -224,6 +235,16 @@ function github_behat_editor_form_alter(&$form, &$form_state) {
             $github_from = new GithubBehatEditor\GithubBehatEditorController();
         }
     }
+}
+
+function github_editor_dropdown($links) {
+    //item_list added an extra div so just needed a simple list
+    $item = '<ul class="dropdown-menu" role="menu">';
+    foreach($links as $key => $value) {
+        $item .= "<li> $value </li>";
+    }
+    $item .= "</ul>";
+    return $item;
 }
 
 function github_edit_test_array($path) {
@@ -238,8 +259,15 @@ function github_edit_test_array($path) {
     } else {
         return array();
     }
-
 }
+
+function github_ace_edit_test_array($path) {
+    $link = l(t('Use Ace Editor'), $path, array('query' => array('ace' => 'true'), 'attributes' => array('class' => array('btn', 'btn-info', 'ace-edit'))));
+    return array(
+        '#markup' => $link
+    );
+}
+
 
 /**
  * Will be needed if github is down and commit is needed
